@@ -23,6 +23,7 @@ type Scenario = {
   priority: string
   action: string
   reason: string
+  execution: { start: string; running: string; result: string; metric: string; before: string; after: string }
 }
 
 export const scenarios: Scenario[] = [
@@ -41,8 +42,14 @@ export const scenarios: Scenario[] = [
       { pump: 'drainage', value: '%78', baseline: 'Olağan: %35–50', finding: 'Kuyu seviyesi geçmişteki üst sınırı aştı.' },
     ],
     priority: 'Drenaj incelemesi',
-    action: 'Kuyu ve şamandıra için bakım bildirimi oluştur.',
-    reason: 'Sapma drenajda. Diğer iki sistemin ölçümü olağan. Şef ajan, teknisyene olayın ölçüm geçmişini iletiyor.',
+    action: 'Drenaj kaydı aç ve kontrollü tahliye iste.',
+    reason: 'Kuyu seviyesi yüksek. Hidrofor ve yangın sistemlerinde eşzamanlı sapma yok.',
+    execution: {
+      start: 'Bakım kaydı açıldı, kontrollü tahliye onaya gönderildi.',
+      running: 'Teknisyen onayladı. Dijital ikizde tahliye uygulanıyor.',
+      result: 'Kuyu seviyesi düştü. Şamandıra incelemesi bakım kaydında açık.',
+      metric: 'Kuyu seviyesi', before: '%78', after: '%61',
+    },
   },
   {
     id: 'hidrofor', decisionId: 'hidrofor-karar', key: 'pressure', label: 'Eve dönüş', time: '17.10',
@@ -59,8 +66,14 @@ export const scenarios: Scenario[] = [
       { pump: 'drainage', value: '%61', baseline: 'Olağan: %35–50', finding: 'Kuyu geriliyor. Önceki drenaj incelemesi açık.' },
     ],
     priority: 'Hizmet kontrolü',
-    action: 'Hidrofor beslemesini ve üst kat basıncını kontrol et.',
-    reason: 'Şef ajan, azalan kuyu seviyesini ve basınç düşüşünü ayrı bulgular olarak izliyor. Hidrofor kontrolü için ayrı bildirim açarken drenaj kaydını koruyor.',
+    action: 'Hidrofor için geçici basınç desteğini onaya gönder.',
+    reason: 'Drenaj toparlanıyor. Üst kat basıncı düşerken diğer pompalarda müdahale gerektiren bir sapma yok.',
+    execution: {
+      start: 'Üst kat basınç desteği için ayrı onay kaydı açıldı.',
+      running: 'Teknisyen onayladı. Geçici destek dijital ikizde uygulanıyor.',
+      result: 'Üst kat basıncı olağan aralığa döndü. Drenaj kaydı korundu.',
+      metric: 'Üst kat basıncı', before: '2,6 bar', after: '3,3 bar',
+    },
   },
   {
     id: 'yangin', decisionId: 'yangin-karar', key: 'fire', label: 'Akşam uyarısı', time: '19.10',
@@ -77,8 +90,14 @@ export const scenarios: Scenario[] = [
       { pump: 'drainage', value: '%44', baseline: 'Olağan: %35–50', finding: 'Kuyu seviyesi olağan aralığa döndü.' },
     ],
     priority: 'Öncelikli bildirim',
-    action: 'Yerel yangın panelinin alarmını teknik ekibe öncelikli ilet.',
-    reason: 'Şef ajan, yangın alarmını günün bakım bildirimlerinin önüne alıyor. Yangın sisteminin denetimi ve müdahale akışı yerel panelde kalıyor.',
+    action: 'Yerel yangın alarmını bakım bildirimlerinin önüne al.',
+    reason: 'Şef ajan alarmı teknik ekibe yönlendirir. Yangın sisteminin denetimi yerel panelde kalır.',
+    execution: {
+      start: 'Öncelikli alarm kaydı açıldı.',
+      running: 'Örnek bildirim teknik ekibin ekranına iletiliyor.',
+      result: 'Teknik ekip bildirimi aldı. Pompaların yerel kumandasına komut gönderilmedi.',
+      metric: 'Alarm bildirimi', before: 'Sırada', after: 'Teslim edildi',
+    },
   },
 ]
 
@@ -87,12 +106,13 @@ export const presentationSeconds = 195
 export const cues = [
   { id: 'baslangic', start: 0 },
   { id: 'ihtiyac', start: 13 },
-  { id: scenarios[0].id, start: 30, motion: true },
-  { id: scenarios[0].decisionId, start: 51 },
-  { id: scenarios[1].id, start: 64, motion: true },
-  { id: scenarios[1].decisionId, start: 88 },
+  { id: 'ajanlar', start: 23 },
+  { id: scenarios[0].id, start: 38, motion: true },
+  { id: scenarios[0].decisionId, start: 55 },
+  { id: scenarios[1].id, start: 68, motion: true },
+  { id: scenarios[1].decisionId, start: 86 },
   { id: scenarios[2].id, start: 100, motion: true },
-  { id: scenarios[2].decisionId, start: 123 },
+  { id: scenarios[2].decisionId, start: 122 },
   { id: 'gorunumler', start: 138 },
   { id: 'pilot', start: 164 },
 ]

@@ -1,5 +1,8 @@
-export const sceneWidth = 1440
+export const sceneWidth = 4480
 export const sceneHeight = 860
+export const sceneOffsetX = 1520
+const west = -sceneOffsetX
+const east = sceneWidth - sceneOffsetX
 
 export type Neighborhood = {
   rain: number
@@ -233,22 +236,23 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   }
 
   ctx.clearRect(0, 0, sceneWidth, sceneHeight)
+  ctx.save()
+  ctx.translate(sceneOffsetX, 0)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
   const skyFill = ctx.createLinearGradient(0, 0, 0, 435)
   skyFill.addColorStop(0, sky)
   skyFill.addColorStop(1, horizon)
-  rect(0, 0, sceneWidth, 448, '#edf4e8')
   ctx.fillStyle = skyFill
-  ctx.fillRect(0, 0, sceneWidth, 448)
+  ctx.fillRect(west, 0, sceneWidth, 448)
 
   const sunX = 306 - dusk * 96
   const sunY = 107 + dusk * 183
   ctx.globalAlpha = .64 * (1 - weather) + clear * .36
   disc(sunX, sunY, 42, '#f5d89e')
   ctx.globalAlpha = 1
-  for (let i = 0; i < 5; i++) {
-    const x = ((i * 327 + 132 + time * (moving ? 4 : 0)) % 1660) - 80
+  for (let i = 0; i < 10; i++) {
+    const x = west + ((i * 413 + 132 + time * (moving ? 4 : 0)) % (sceneWidth + 180)) - 80
     const y = 76 + i % 3 * 42
     const cloud = mix('eef2e9', '738f99', weather * .70 + dusk * .18)
     ctx.globalAlpha = .36 + weather * .44
@@ -265,46 +269,54 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   }
 
   // Backdrop and street remain the same place as the weather and light change.
-  for (let i = 0; i < 13; i++) {
+  for (let i = 0; i < 34; i++) {
     const h = 42 + (i * 53 % 111)
-    const x = i * 119 - 25
+    const x = west + i * 119 - 25
     rect(x, 384 - h, 95 + i % 3 * 5, h, mix('a8c5bc', '687e83', dusk * .78))
     rect(x + 20, 381 - h, 55, h, mix('bad1c6', '819292', dusk * .70))
     for (let row = 0; row < 3; row++) rect(x + 28, 397 - h + row * 23, 32, 4, '#c7d7c9')
   }
-  polygon([[0,386],[309,365],[542,392],[811,369],[1130,382],[1440,361],[1440,455],[0,455]], '#b4cabe')
+  polygon([[west,369],[-630,380],[0,386],[309,365],[542,392],[811,369],[1130,382],[1440,361],[2055,377],[east,363],[east,455],[west,455]], '#b4cabe')
+  apartment(-1050, 239, 192, 184, '#d0ddd0', '#aebeb2', 4, 4)
+  apartment(-795, 285, 176, 136, '#e0dbcb', '#b8b9a9', 3, 4)
+  apartment(-548, 208, 214, 214, '#d7e2db', '#abbeb5', 5, 5)
+  apartment(-270, 272, 174, 149, '#d6d9c6', '#b7beae', 4, 4)
   apartment(52, 247, 181, 175, '#d8d5bd', '#b7b7a2', 4, 4)
   apartment(271, 279, 168, 140, '#d7e0d4', '#b8cbc1', 3, 4)
   apartment(1142, 238, 187, 176, '#d3d9c7', '#acbbae', 4, 4)
   apartment(1377, 292, 142, 115, '#d9ded0', '#acbbae', 3, 3)
-  rect(0, 421, sceneWidth, 25, '#e6ece0')
-  path([[0,425],[1440,425]], '#a4b5a6', 1)
-  for (let x = 9; x < sceneWidth; x += 26) path([[x,427],[x - 8,445]], '#bac9b9', 1)
-  rect(0, 446, sceneWidth, 56, mix('91a9a6', '657889', dusk * .65))
-  rect(0, 502, sceneWidth, 15, '#c8d6ce')
-  rect(0, 502, sceneWidth, 3, '#e8ede0')
-  for (let x = 0; x < sceneWidth; x += 33) path([[x,503],[x + 4,513]], '#9bafa5', .9)
+  apartment(1592, 219, 232, 202, '#e5e1d1', '#acbcae', 5, 5)
+  apartment(1902, 277, 167, 145, '#ceddd3', '#a6b9af', 3, 4)
+  apartment(2158, 240, 205, 182, '#d9decd', '#b8bfae', 4, 5)
+  apartment(2427, 283, 160, 137, '#d7e3d8', '#a5bcb1', 3, 4)
+  rect(west, 421, sceneWidth, 25, '#e6ece0')
+  path([[west,425],[east,425]], '#a4b5a6', 1)
+  for (let x = west + 9; x < east; x += 26) path([[x,427],[x - 8,445]], '#bac9b9', 1)
+  rect(west, 446, sceneWidth, 56, mix('91a9a6', '657889', dusk * .65))
+  rect(west, 502, sceneWidth, 15, '#c8d6ce')
+  rect(west, 502, sceneWidth, 3, '#e8ede0')
+  for (let x = west; x < east; x += 33) path([[x,503],[x + 4,513]], '#9bafa5', .9)
   if (weather > .14) {
     ctx.globalAlpha = weather * .5
-    for (let i = 0; i < 14; i++) {
-      const x = (i * 139 + 48) % sceneWidth
+    for (let i = 0; i < 30; i++) {
+      const x = west + (i * 139 + 48) % sceneWidth
       const y = 452 + i % 6 * 8
       path([[x,y],[x + 28 + i % 4 * 6,y]], '#dcebe080', 2.5)
     }
     ctx.globalAlpha = 1
   }
-  for (let x = -16; x < sceneWidth; x += 84) rect(x, 470, 44, 3, '#e7ede1')
+  for (let x = west; x < east; x += 84) rect(x, 470, 44, 3, '#e7ede1')
   for (let x = 181; x < 280; x += 15) rect(x, 453, 7, 41, '#dde8df')
-  rect(0, 517, sceneWidth, 343, '#aebeb3')
-  polygon([[0,517],[1440,517],[1440,729],[1180,742],[864,712],[579,745],[291,699],[0,728]], '#b7c4b7')
-  polygon([[0,736],[389,702],[580,751],[865,723],[1240,755],[1440,741],[1440,860],[0,860]], '#a3b8ae')
-  for (let i = 0; i < 23; i++) {
-    const x = (i * 133.6 + 17) % 1439
+  rect(west, 517, sceneWidth, 343, '#aebeb3')
+  polygon([[west,517],[east,517],[east,727],[2070,750],[1440,729],[1180,742],[864,712],[579,745],[291,699],[0,728],[-580,749],[west,701]], '#b7c4b7')
+  polygon([[west,731],[-630,746],[0,736],[389,702],[580,751],[865,723],[1240,755],[1440,741],[1970,768],[east,731],[east,860],[west,860]], '#a3b8ae')
+  for (let i = 0; i < 56; i++) {
+    const x = west + (i * 133.6 + 17) % sceneWidth
     const y = 574 + (i * 71.3 % 260)
     path([[x,y],[x + 21,y - 5],[x + 42,y - 4]], '#8da99b', 1)
   }
-  for (let i = 0; i < 26; i++) {
-    const x = (i * 153.9 + 34) % sceneWidth
+  for (let i = 0; i < 50; i++) {
+    const x = west + (i * 153.9 + 34) % sceneWidth
     const y = 547 + i * 53.7 % 279
     polygon([[x,y],[x + 7,y - 4],[x + 12,y],[x + 8,y + 4],[x + 3,y + 3]], i % 3 ? '#94ab9e' : '#c3d0c1')
   }
@@ -316,6 +328,10 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   tree(474, 444, 43, '#8cad87')
   tree(1084, 447, 65, '#779d89')
   tree(1363, 442, 57, '#739783')
+  for (const [x, size] of [[-1116,72],[-837,56],[-585,64],[-302,48],[-81,70],[1535,57],[1865,75],[2110,55],[2410,61],[2585,78]]) {
+    tree(x, 440, size, '#739582')
+    planter(x + 15, 437, 46, '#6d9277')
+  }
   apartment(548, 189, 467, 254, '#e9e9d9', '#b4c8bc', 4, 5, true)
   rect(532, 443, 551, 6, '#edf0e2')
   rect(746, 389, 57, 15, '#e4ece0', '#8cab9e')
@@ -331,9 +347,9 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     polygon([[x + 16,368],[x + 32,368],[x + 29,373],[x + 18,373]], '#6c8783')
     if (dusk > .15) disc(x + 24,369,7,'#f6dfa9')
   }
-  ;[114, 494, 1095, 1347].forEach(lamp)
+  ;[-963, -685, -385, -125, 114, 494, 1095, 1347, 1553, 1873, 2140, 2463].forEach(lamp)
 
-  const vanX = moving ? (time * 36 + 316) % 1635 - 100 : 283
+  const vanX = moving ? west + (time * 36 + 1516) % (sceneWidth + 90) - 75 : 283
   rect(vanX + 2, 480, 62, 3, '#4c6662')
   rect(vanX, 458, 64, 21, '#326966', '#244d4e')
   polygon([[vanX + 9,458],[vanX + 20,445],[vanX + 46,445],[vanX + 55,458]], '#e3ede7', ink)
@@ -358,6 +374,25 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   rect(542, 525, 679, 231, shade(542,525,542,756,'#e2eae0','#b0c4b8'), ink)
   polygon([[542,525],[593,506],[1269,506],[1221,525]], '#9aafa4', ink)
   polygon([[1221,525],[1269,506],[1269,730],[1221,756]], '#97aca3', ink)
+  rect(451, 572, 81, 151, '#c5d5d0', '#5a7d79')
+  rect(459, 582, 65, 130, shade(459,582,524,712,'#e0ece8','#9ab8b3'), '#698d84')
+  const reserve = 632
+  polygon([
+    [459,reserve + 1],[472,reserve - 1],[488,reserve + 1],[504,reserve - 1],[524,reserve + 1],
+    [524,712],[459,712],
+  ], '#80aeb2')
+  path([[460,670],[522,670]], '#5b7f83', 1)
+  for (let step = 0; step < 8; step++) {
+    const y = 585 + step * 18
+    path([[530,y],[544,y]], '#637d74', 1.2)
+  }
+  path([[530,577],[530,719]], '#637d74', 1.4)
+  path([[544,577],[544,719]], '#637d74', 1.4)
+  pipe([[523,696],[563,696],[563,678],[636,678]], 7)
+  ctx.font = '700 10px "Segoe UI", sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillStyle = deep
+  ctx.fillText('YANGIN REZERVİ', 492, 605)
   rect(562, 550, 639, 176, shade(562,550,562,726,'#e8eee3','#cbd8cb'), '#789b8d')
   rect(562, 550, 639, 12, '#a6bab0')
   rect(562, 699, 639, 27, '#a6bcaf')
@@ -435,19 +470,24 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     ctx.globalAlpha = 1
   }
 
-  rect(1143, 592, 48, 117, shade(1143,592,1191,592,'#e2eee4','#aac4ba'), ink)
+  rect(1138, 592, 58, 151, '#aec5b9', ink)
+  rect(1143, 595, 48, 143, shade(1143,592,1191,592,'#e2eee4','#aac4ba'), ink)
   const waterY = 702 - level * 1.13
+  const drainBottom = 733
+  const shaftFloor = Math.max(waterY + 11, drainBottom - 6)
+  path([[1169,625],[1169,shaftFloor]], '#8ba89b', 2.2)
+  rect(1164, shaftFloor - 8, 10, 10, '#507e72', '#446c62')
   polygon([
     ...Array.from({ length: 11 }, (_, i) => [1148 + i * 4, waterY + Math.sin(i * .75 + time * 3) * 1.5]),
-    [1188,705],[1148,705],
-  ], '#6bb1a7')
+    [1188,drainBottom],[1148,drainBottom],
+  ], '#5ba898c9')
   for (let scale = 0; scale < 6; scale++) {
     const y = 601 + scale * 17
     path([[1144,y],[1150 + (scale % 2) * 4,y]], '#567d72', 1.2)
   }
   path([[1150,646],[1187,646]], '#537f72', 1.2)
   path([[1151,waterY + 2],[1162,waterY + 3],[1174,waterY + 1],[1187,waterY + 2]], '#c9e9d9', 1.5)
-  label('Kuyu', 1168, 719)
+  label('Kuyu', 1168, 754)
 
   if (weather > .13) {
     ctx.globalAlpha = Math.min(1, weather * 1.65)
@@ -491,10 +531,10 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   }
 
   ctx.globalAlpha = weather * .8
-  for (let i = 0; i < 98; i++) {
-    const x = (i * 197.3 + 41) % sceneWidth
+  for (let i = 0; i < 220; i++) {
+    const x = west + (i * 197.3 + 41) % sceneWidth
     const y = (i * 73.4 + time * (moving ? 227 + i % 7 * 18 : 0)) % 439
     path([[x,y],[x - 6,Math.min(445,y + 15 + i % 5)]], '#e2f5f1', 1.4)
   }
-  ctx.globalAlpha = 1
+  ctx.restore()
 }

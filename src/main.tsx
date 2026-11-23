@@ -41,6 +41,7 @@ function Header({ presentation }: { presentation: ReturnType<typeof usePresentat
       </button>
       <nav id="navigation" className={open ? 'nav open' : 'nav'} aria-label="Ana menü">
         <a href="#baslangic" onClick={closeMenu}>Hikâye</a>
+        <a href="#ajanlar" onClick={closeMenu}>Ajanlar</a>
         {scenarios.map((event) => <a key={event.id} href={'#' + event.id} onClick={closeMenu}>{event.id === 'saganak' ? 'Atık su' : event.id === 'hidrofor' ? 'Hidrofor' : 'Yangın'}</a>)}
         <a href="#gorunumler" onClick={closeMenu}>Arayüzler</a>
         <a href="#pilot" onClick={closeMenu}>Pilot ve ilk test</a>

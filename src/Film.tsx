@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
-import { ArrowDown, Building2, Flame, Gauge, GitMerge, Waves } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { ArrowDown, ArrowRight, Bell, Building2, Check, Flame, Gauge, GitMerge, RotateCcw, Waves } from 'lucide-react'
 import { pumps } from './content'
-import { drawNeighborhood, sceneHeight, sceneWidth } from './Neighborhood'
+import { drawNeighborhood, sceneHeight, sceneOffsetX, sceneWidth } from './Neighborhood'
 import { scenarios } from './story'
 import type { CameraPoint } from './story'
 
@@ -10,7 +11,13 @@ type Event = typeof scenarios[number]
 const icons = { fire: Flame, pressure: Gauge, drainage: Waves }
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
-const overview: CameraPoint = [880, 447, 1, [523, 117, 1281, 768]]
+const overview: CameraPoint = [838, 447, 1, [440, 117, 1281, 768]]
+const sceneResolution = .9
+const agentRoles = {
+  fire: { title: 'Yangın ajanı', text: 'Hazırlık ve alarm durumunu salt okunur izler. Yerel yangın paneli kendi kontrolünü sürdürür.' },
+  pressure: { title: 'Hidrofor ajanı', text: 'Üst kat basıncını binanın geçmişiyle karşılaştırır ve ihtiyaç varsa basınç desteği önerir.' },
+  drainage: { title: 'Atık su ajanı', text: 'Kuyu seviyesini izler, olağan aralığın dışına çıkınca drenaj incelemesi önerir.' },
+}
 
 function interpolateCamera(from: CameraPoint, to: CameraPoint, weight: number): CameraPoint {
   const mix = (start: number, end: number) => start + (end - start) * weight
@@ -65,6 +72,93 @@ function Context() {
   </div>
 }
 
+function AgentIntroduction() {
+  const diagram = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const illustration = diagram.current?.getContext('2d')
+    if (!illustration) return
+
+    const scale = 1.2
+    illustration.setTransform(scale, 0, 0, scale, -(sceneOffsetX + 417) * scale, -500 * scale)
+    drawNeighborhood(illustration, { rain: 0, clear: 0, dusk: 0, time: 0, moving: false })
+  }, [])
+
+  return <section className="section fixed-screen agent-introduction" id="ajanlar" aria-labelledby="agents-title">
+    <div className="shell">
+      <p className="eyebrow">A Blok · Pompa odası</p>
+      <h2 id="agents-title">Dört ajan, tek bina.</h2>
+      <div className="intro-agents">
+        <article className="intro-conductor">
+          <GitMerge size={23} /><h3>Şef ajan</h3>
+          <p>Üç pompanın ölçümlerini bir araya getirir, hangi olayın önce ele alınacağını seçer ve aksiyonu takip eder. Hidrofor ile drenaj uygulamaları onayla dijital ikizde oynatılır.</p>
+        </article>
+        <figure className="intro-diagram" role="img" aria-label="Yangın suyu rezervi, yangın seti, hidrofor grubu, atık su pompaları ve toplama kuyusu">
+          <canvas ref={diagram} width={1080} height={313} aria-hidden="true" />
+        </figure>
+        <div className="intro-systems">
+          {pumps.map((pump) => {
+            const Icon = icons[pump.type]
+            const role = agentRoles[pump.type]
+            return <article key={pump.id}><Icon size={19} /><h3>{role.title}</h3><p>{role.text}</p></article>
+          })}
+        </div>
+      </div>
+    </div>
+  </section>
+}
+
+function ActionExecution({ event }: { event: Event }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+  const [phase, setPhase] = useState(0)
+  const { execution } = event
+
+  useEffect(() => {
+    const panel = box.current
+    if (!panel) return
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: .42 })
+    observer.observe(panel)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!visible) return
+    setPhase(0)
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const timers = (reduced ? [0, 0, 0] : [380, 1260, 3050]).map(
+      (delay, index) => window.setTimeout(() => setPhase(index + 1), delay),
+    )
+    return () => timers.forEach(window.clearTimeout)
+  }, [visible, attempt])
+
+  const steps = [execution.start, execution.running, execution.result]
+  return <div className="action-execution" ref={box} data-phase={phase}>
+    <ol className="action-steps" aria-label="Şef ajanın aksiyon kaydı">
+      {steps.map((step, index) => <li key={step} className={phase > index ? 'is-reached' : ''}
+        aria-current={phase === index + 1 ? 'step' : undefined}>
+        <span className="action-icon" aria-hidden="true">{phase > index ? <Check size={13} /> : index + 1}</span>
+        <span>{step}</span>
+      </li>)}
+    </ol>
+    <div className="action-result">
+      <span>{execution.metric} · Örnek uygulama</span>
+      <div className={'action-diagram action-diagram-' + event.key} aria-hidden="true">
+        {event.key === 'fire'
+          ? <><Bell size={16} /><span className="delivery-track" />{phase === 3 ? <Check size={17} /> : <span className="delivery-end" />}</>
+          : <span />}
+      </div>
+      <div className="action-values">
+        <span>{execution.before}</span><ArrowRight size={16} aria-hidden="true" />
+        <output aria-live="polite">{phase === 3 ? execution.after : 'Bekleniyor'}</output>
+      </div>
+      <button type="button" className="action-replay" onClick={() => setAttempt((current) => current + 1)} disabled={phase !== 3}>
+        <RotateCcw size={14} /> Aksiyonu tekrar oynat
+      </button>
+    </div>
+  </div>
+}
 
 function Decision({ event }: { event: Event }) {
   const chapter = useRef<HTMLElement>(null)
@@ -104,6 +198,7 @@ function Decision({ event }: { event: Event }) {
         <strong>{event.action}</strong>
         <p>{event.reason}</p>
       </article>
+      <ActionExecution event={event} />
     </div>
   </section>
 }
@@ -141,9 +236,10 @@ function Incident() {
     const captionRail = captions.current
     const context = canvas.current?.getContext('2d')
     if (!root || !graphic || !view || !drawing || !captionRail || !context) return
+    context.setTransform(sceneResolution, 0, 0, sceneResolution, 0, 0)
 
     const notes = scenarios.map((event) => document.getElementById(event.id))
-    const decisions = scenarios.map((event) => document.getElementById(event.decisionId))
+    const decisions = [document.getElementById('ajanlar'), ...scenarios.map((event) => document.getElementById(event.decisionId))]
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
     const stacked = window.matchMedia('(max-width: 767px)')
     let frame = 0
@@ -214,7 +310,7 @@ function Incident() {
             (safeWidth - 2 * inset) / (right - left),
             (safeBottom - 2 * inset) / (bottom - top),
           )
-          const translateX = frameAxis(x, left, right, safeLeft, safeRight, width, sceneWidth, scale, inset)
+          const translateX = frameAxis(x + sceneOffsetX, left + sceneOffsetX, right + sceneOffsetX, safeLeft, safeRight, width, sceneWidth, scale, inset)
           const translateY = frameAxis(y, top, bottom, 0, safeBottom, height, sceneHeight, scale, inset)
           const blend = 1 - Math.exp(-Math.max(0, time - lastDraw) / 65)
           rendered = rendered
@@ -265,7 +361,9 @@ function Incident() {
     <div className="incident-stage" ref={stage}>
       <div className="incident-viewfinder" ref={viewfinder} role="img"
         aria-label="Sokak, komşu binalar, park, araçlar ve A Blok’un üç pompalı bodrumunu gösteren mahalle kesiti">
-        <div className="incident-plate" ref={plate}><canvas ref={canvas} width={sceneWidth} height={sceneHeight} aria-hidden="true" /></div>
+        <div className="incident-plate" style={{ '--world-width': sceneWidth + 'px' } as CSSProperties} ref={plate}>
+          <canvas ref={canvas} width={sceneWidth * sceneResolution} height={sceneHeight * sceneResolution} aria-hidden="true" />
+        </div>
       </div>
       <div className="scene-captions" ref={captions}>
         <div className="scene-caption caption-overview is-current"><Context /></div>
@@ -276,6 +374,7 @@ function Incident() {
       <section className="incident-note context-note" id="ihtiyac" aria-label="Günün başlangıcı">
         <div className="static-caption shell"><Context /></div>
       </section>
+      <AgentIntroduction />
       {scenarios.map((event) => <div key={event.id}>
         <section className="incident-note" id={event.id} aria-label={event.title}>
           <div className="static-caption shell"><IncidentNote event={event} /></div>

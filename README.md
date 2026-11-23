@@ -19,10 +19,11 @@ Sunumu oynat, açılıştan pilot ekranının sonuna kadar ilerler. Sunumu durak
 | Süre | Sunum |
 | --- | --- |
 | 00–13 sn | **Orkestra ve Prometheus.** Aynı apartmanın üç pompası farklı görevler yapıyor. Yöneticiye, teknisyene ve sakine bu sistemlerin birlikte ne söylediğini anlatıyoruz. |
-| 13–30 sn | **Mahalle.** Teknisyen bugün cihaz ekranlarına, eşik alarmlarına ve uygun kurulumlarda Wilo Smart Connect’e bakıyor. Birden fazla cihazdan gelen bulguları ekip bir araya getiriyor. |
-| 30–64 sn | **16.20 · Sağanak.** Kuyu yüzde 36’dan 78’e yükseliyor. Atık su ajanı, seviyeyi binanın yüzde 35–50 aralığıyla karşılaştırıyor. Şef ajan, diğer sistemler olağan durumdayken drenaj incelemesi açıyor. |
-| 64–100 sn | **17.10 · Eve dönüş.** Hava açıyor, sakinler dönüyor ve su kullanımı artıyor. Kuyu seviyesi gerilerken üst kat basıncı 2,6 bara düşüyor. Şef ajan, hidrofor kontrolünü ayrı bildiriyor ve drenaj kaydını koruyor. |
-| 100–138 sn | **19.10 · Akşam alarmı.** Duman görülüyor ve yerel panel alarm bildiriyor. Diğer iki ölçüm olağan aralığa dönüyor. Şef ajan panel alarmını bakım bildirimlerinin önüne alıyor. Yerel kontrol panelde kalıyor. |
+| 13–23 sn | **Mahalle.** Teknisyen bugün cihaz ekranlarına, eşik alarmlarına ve uygun kurulumlarda Wilo Smart Connect’e bakıyor. Birden fazla cihazdan gelen bulguları ekip bir araya getiriyor. |
+| 23–38 sn | **Dört ajan.** Şef ajan koordinasyonu üstleniyor. Yangın, hidrofor ve atık su ajanları kendi ölçümlerini ve önerilerini paylaşıyor. |
+| 38–68 sn | **16.20 · Sağanak.** Kuyu yüzde 36’dan 78’e yükseliyor. Şef drenaj kaydı açıyor ve kontrollü tahliyeyi onaya gönderiyor. Örnek onaydan sonra kuyu seviyesi yüzde 61’e iniyor. |
+| 68–100 sn | **17.10 · Eve dönüş.** Su kullanımı artıyor ve üst kat basıncı 2,6 bara düşüyor. Şefin onaya gönderdiği geçici destek dijital ikizde uygulanıyor ve ölçüm 3,3 bara çıkıyor. |
+| 100–138 sn | **19.10 · Akşam alarmı.** Duman görülüyor ve yerel panel alarm bildiriyor. Şef alarm kaydını önceliklendiriyor ve örnek bildirimin teknik ekibe teslim edildiğini gösteriyor. Yerel kontrol panelde kalıyor. |
 | 138–164 sn | **Kullanıcı görünümleri.** Önce yönetici günün olay kaydını görüyor, ardından sakin örnek bildirimi ve su kesintisi sorusunun yanıtını açıyor. Teknisyen ve Wilo sekmeleri manuel olarak da incelenebilir. |
 | 164–195 sn | **Pilot.** Uygun mevcut Wilo bağlantısından salt okunur erişimle tek binada başlayın. Aynı kayıtları sabit eşik, bağımsız ajanlar ve şef ajanla oynatın. Yanlış alarmı artırmadan erken uyarı süresini iyileştirmeyi hedefleyin. |
 
@@ -39,4 +40,4 @@ Sunumu oynat, açılıştan pilot ekranının sonuna kadar ilerler. Sunumu durak
 | Beklenen su etkisi | Pilot ekranındaki erken uyarı, yanlış alarm ve plansız olay ölçütleri |
 | İlk test | Aynı olay kayıtlarında üç yöntemin karşılaştırması ve başarı ölçütü |
 
-Mahalle, tek Canvas kompozisyonu olarak çizilir. Olaylar boyunca hava, aydınlatma ve kamera değişir. Pompa odası değerlendirmeleri mahalle sahnesinin üzerinde açılır. Hareket azaltma tercihi açıkken mahalle çizimi ve anlatım sabit görünür.
+Mahalle, geniş bir Canvas kompozisyonu olarak çizilir. Olaylar boyunca hava, aydınlatma ve kamera değişir. Pompa odası değerlendirmeleri kararın alınmasını, uygulanmasını ve sonucun ekranda doğrulanmasını gösterir. Hareket azaltma tercihi açıkken mahalle çizimi ve anlatım sabit görünür.
