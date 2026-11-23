@@ -47,7 +47,7 @@ export const canvasAnswers = [
   {
     question: 'Problem',
     answer: 'Konut sitelerinde yangın, kullanım suyu ve drenaj pompaları farklı kontrolörlerle çalışır. Sağanak sırasında kuyu seviyesinin yükseldiğini görmek, tek başına binanın su hizmetinin veya yangın hazırlığının etkilenip etkilenmediğini göstermez.',
-    note: 'Bu olay bir kullanım senaryosudur. Saha gözlemi ve olay sıklığı pilotta doğrulanacak.',
+    note: 'Temsili olayda kuyu %36’dan %78’e yükselirken hidrofor 3,4 bar ve yangın paneli hazır durumda. Bu üç sinyalin sahada birlikte kaydedilip kaydedilebildiği pilotta doğrulanacak.',
   },
   {
     question: 'Hedef kullanıcı ve ihtiyaç',
@@ -56,7 +56,7 @@ export const canvasAnswers = [
   {
     question: 'Mevcut yaklaşım ve eksikliği',
     answer: 'Teknik ekip kontrolör ekranları, yerel eşik alarmları ve mevcut Wilo izleme araçlarıyla cihaz durumuna bakar. Bina ölçeğindeki ortak olayı ve sakinlere iletilecek açıklamayı ekip bir araya getirir.',
-    note: 'Wilo’nun mevcut bağlantı ve izleme özellikleri pilotun veri kaynağıdır.',
+    note: 'Wilo Smart Connect mevcut cihaz verisini uzaktan izlemeyi sağlar. Orkestra, erişilebilir Wilo verisinden ortak olay özeti ve rol bazlı bildirim üretmeyi hedefler.',
   },
   {
     question: 'Çözüm önerisi',
@@ -68,16 +68,16 @@ export const canvasAnswers = [
   },
   {
     question: 'Veri ve uygulanabilirlik',
-    answer: 'İlk deneyde örnek kuyu seviyesi, hidrofor basıncı ve yangın paneli durumu kullanılır. Pilot için bu değerlerin zaman damgalı geçmişi, alarm kayıtları ve mevcut Wilo bağlantısından yetkili okuma gerekir.',
+    answer: 'İlk deneyde örnek kuyu seviyesi, hidrofor basıncı ve yangın paneli durumu kullanılır. İlk pilot için mevcut Wilo bağlantısından yetkili, salt okunur erişim, zaman damgalı ölçüm ve alarm geçmişi ile olayları yeniden oynatan bir simülasyon ortamı gerekir.',
     note: 'Örnek veri hazır. Gerçek bina verisi, model uyumu ve erişim izni Wilo ile doğrulanacak.',
   },
   {
     question: 'Beklenen su etkisi',
-    answer: 'Drenaj sorunu erken fark edildiğinde taşkın ve su hizmeti kesintisine yol açan plansız olayların azalması beklenir. Ana gösterge bina başına aylık plansız pompa olayıdır. Erken uyarı süresi ve yanlış alarm sayısı da izlenir.',
+    answer: 'Drenaj sorunu erken fark edildiğinde taşkın ve su hizmeti kesintisine yol açan plansız olayların azalması beklenir. Ana gösterge bina başına aylık plansız pompa olayıdır. Taşkın ve su kesintisi bu sayımda ayrı olay türleri olarak kaydedilir. Erken uyarı süresi ve yanlış alarm sayısı da izlenir.',
   },
   {
     question: 'İlk test',
-    answer: 'Varsayım, aynı olay kayıtlarında şef ajanın üç ölçümü birlikte değerlendirerek daha erken ve daha isabetli uyarı verebilmesidir. Hackathon testinde aynı örnek olay dizisi sabit eşik, bağımsız ajanlar ve şef ajanla karşılaştırılır.',
+    answer: 'Varsayım, aynı olay kayıtlarında şef ajanın üç ölçümü birlikte değerlendirerek daha erken ve daha isabetli uyarı verebilmesidir. Hackathon testinde yağmur, normal çalışma ve hatalı sensör senaryoları aynı girdilerle oynatılır. Sabit eşik, bağımsız ajanlar ve şef ajanlı yaklaşım için ilk uyarı zamanı ve yanlış alarm sayısı kaydedilir.',
     note: 'Geçme koşulu, yanlış alarmları artırmadan uyarı süresini iyileştirmektir. Yangın paneli salt okunur kalır.',
   },
 ]

@@ -1,125 +1,236 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
-import { SceneArt } from './SceneArt'
+import type { ReactNode } from 'react'
+import { ArrowDown, Droplets, Flame, Gauge, GitMerge, Waves } from 'lucide-react'
+import { pumps } from './content'
 
-const shots = [
-  {
-    id: 'baslangic', art: 'hero', caption: 'A Blok · 18.00',
-    title: 'Yağmur başladı.',
-    copy: 'Bir apartmanın su düzeni bodrumdaki üç ayrı sisteme bağlı. Sağanak geldiğinde bina kendi durumunu nasıl anlar?',
-  },
-  {
-    id: 'senaryo', art: 'room', caption: 'Bodrum · Üç pompa sistemi',
-    title: 'Aşağıda üç ayrı dünya.',
-    copy: 'Yangın seti hazır bekler. Hidrofor dairelere su basar. Atık su pompası kuyuyu boşaltır. Her sistemin kendi ölçümü, geçmişi ve ajanı var.',
-  },
-  {
-    id: 'saganak', art: 'storm', caption: 'Sağanak · Örnek veri',
-    title: 'Kuyu yükseliyor.',
-    copy: 'Kuyu seviyesi %78’e çıkar. Atık su ajanı, binanın bu saatlerdeki olağan %35–50 aralığından sapmayı fark eder.',
-  },
-  {
-    id: 'ortak-karar', art: 'coordination', caption: 'Şef ajan · Örnek olay',
-    title: 'Üç sinyal. Tek karar.',
-    copy: 'Hidrofor normal, yangın paneli hazır, kuyu seviyesi yüksek. Şef ajan bunları tek olayda birleştirir ve teknisyene kuyu ile şamandırayı kontrol etmesini önerir.',
-  },
-] as const
-
-const timelineEnd = 3.45
+export const presentationSeconds = 180
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
+const pumpIcons = { fire: Flame, pressure: Gauge, drainage: Waves }
 
-export function Film() {
-  const track = useRef<HTMLElement>(null)
-  const stage = useRef<HTMLDivElement>(null)
-  const shotNodes = useRef<(HTMLElement | null)[]>([])
-  const position = useRef(0)
-  const [active, setActive] = useState(0)
+export function usePresentation() {
+  const [playing, setPlaying] = useState(false)
 
   useEffect(() => {
-    const reel = track.current
-    const viewport = stage.current
-    if (!reel || !viewport) return
+    if (!playing) return
+    const ending = document.getElementById('kanvas')
+    if (!ending) return
 
+    const finish = window.scrollY + ending.getBoundingClientRect().top - 76
+    const origin = window.scrollY >= finish - 4 ? 0 : window.scrollY
+    const remaining = Math.max(1, presentationSeconds * 1000 * (finish - origin) / finish)
+    const started = performance.now()
     let frame = 0
 
-    function update() {
-      if (!reel || !viewport) return
-
-      const distance = reel.offsetHeight - viewport.offsetHeight
-      const progress = distance > 0 ? clamp(-reel.getBoundingClientRect().top / distance) : 0
-      const current = progress * timelineEnd
-      position.current = current
-      let selected = 0
-
-      shotNodes.current.forEach((shot, index) => {
-        if (!shot) return
-
-        const arrival = index === 0 ? 1 : ease(clamp((current - index + .70) / .58))
-        const exit = index === shots.length - 1 ? 0 : ease(clamp((current - index - .38) / .58))
-        const alpha = arrival * (1 - exit)
-        const travel = index === 0 ? -exit * 38 : (1 - arrival) * 38 - exit * 24
-        const camera = index === 0 ? 1 + clamp(current) * .67 : 1 + clamp(current - index) * .19
-
-        if (alpha > .5) selected = index
-        shot.style.setProperty('--opacity', String(alpha))
-        shot.style.setProperty('--travel', travel + '%')
-        shot.style.setProperty('--camera', String(camera))
-        shot.style.setProperty('--depth', (1 - arrival) * 24 + '%')
-      })
-
-      viewport.style.setProperty('--film-progress', progress + '')
-      setActive(selected)
+    function advance(now: number) {
+      const progress = clamp((now - started) / remaining)
+      window.scrollTo({ top: origin + (finish - origin) * progress, behavior: 'instant' })
+      if (progress < 1) frame = requestAnimationFrame(advance)
+      else setPlaying(false)
     }
 
-    function schedule() {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(update)
+    function pause() { setPlaying(false) }
+    function pauseOnPointer(event: PointerEvent) {
+      const target = event.target
+      if (target instanceof Element && target.closest('.presentation-toggle')) return
+      if (event.pointerType === 'touch' || (target instanceof Element && target.closest('a,button,summary'))) pause()
+    }
+    function pauseOnKey(event: KeyboardEvent) {
+      if (['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp', ' '].includes(event.key)) pause()
     }
 
-    update()
-    window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
+    frame = requestAnimationFrame(advance)
+    window.addEventListener('wheel', pause, { passive: true })
+    window.addEventListener('pointerdown', pauseOnPointer)
+    window.addEventListener('keydown', pauseOnKey)
     return () => {
-      window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
       cancelAnimationFrame(frame)
+      window.removeEventListener('wheel', pause)
+      window.removeEventListener('pointerdown', pauseOnPointer)
+      window.removeEventListener('keydown', pauseOnKey)
+    }
+  }, [playing])
+
+  return { playing, toggle: () => setPlaying((current) => !current), pause: () => setPlaying(false) }
+}
+
+export function Journey({ children }: { children: ReactNode }) {
+  const journey = useRef<HTMLDivElement>(null)
+  const world = useRef<HTMLDivElement>(null)
+  const weather = useRef<HTMLCanvasElement>(null)
+  const rainScene = useRef<HTMLElement>(null)
+  const agents = useRef<HTMLElement>(null)
+  const readout = useRef<HTMLOutputElement>(null)
+
+  useEffect(() => {
+    const root = journey.current
+    const scene = world.current
+    const canvas = weather.current
+    const ctx = canvas?.getContext('2d')
+    if (!root || !scene || !canvas || !ctx) return
+
+    const context = ctx
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const width = canvas.width
+    const height = canvas.height
+    let frame = 0
+    let camera = 0
+    let water = 0
+    let signals = 0
+    let inView = true
+
+    function render(now: number) {
+      if (!root || !scene) return
+
+      const viewport = window.innerHeight
+      const origin = root.getBoundingClientRect().top
+      const rainTop = rainScene.current?.getBoundingClientRect().top ?? viewport
+      const agentTop = agents.current?.getBoundingClientRect().top ?? viewport
+      const descent = ease(clamp((-origin + viewport * .08) / (viewport * 1.2)))
+      const rise = ease(clamp((viewport * .94 - rainTop) / (viewport * .95)))
+      const coordination = ease(clamp((viewport * .9 - agentTop) / (viewport * .56)))
+
+      camera += (descent - camera) * .17
+      water += (rise - water) * .12
+      signals += (coordination - signals) * .16
+
+      if (reduced.matches) {
+        camera = descent
+        water = rise
+        signals = coordination
+      }
+
+      scene.style.setProperty('--descent', camera.toFixed(4))
+      scene.style.setProperty('--water', water.toFixed(4))
+      scene.style.setProperty('--signals', signals.toFixed(4))
+
+      const percent = '%' + Math.round(36 + water * 42)
+      if (readout.current && readout.current.textContent !== percent) readout.current.textContent = percent
+
+      context.clearRect(0, 0, width, height)
+      context.lineCap = 'round'
+      if (!reduced.matches) {
+        const time = now * .001
+        const count = Math.floor(64 + water * 81)
+        context.lineWidth = 1
+        context.strokeStyle = 'rgba(230, 250, 254, .57)'
+        context.beginPath()
+        for (let index = 0; index < count; index++) {
+          const x = (index * 137.47 + 19) % width
+          const y = (index * 47.39 + time * (275 + index % 9 * 28)) % 536
+          context.moveTo(x, y)
+          context.lineTo(x - 3, Math.min(536, y + 12 + index % 14))
+        }
+        context.stroke()
+
+        if (signals > .01) {
+          const sources = [607, 878, 1177]
+          const target = 1250
+          context.strokeStyle = 'rgba(132, 255, 224,' + signals * .7 + ')'
+          context.lineWidth = 2
+          for (const source of sources) {
+            context.beginPath()
+            context.moveTo(source, 714)
+            context.lineTo(source, 639)
+            context.lineTo(target, 639)
+            context.stroke()
+
+            const distance = 75 + target - source
+            const offset = source * .009
+            for (let dot = 0; dot < 3; dot++) {
+              const position = (time * 103 + offset + dot * distance / 3) % distance
+              const x = source + Math.max(0, position - 75)
+              const y = 714 - Math.min(position, 75)
+              context.beginPath()
+              context.arc(x, y, 4, 0, Math.PI * 2)
+              context.fillStyle = 'rgba(196,255,239,' + signals + ')'
+              context.fill()
+            }
+          }
+        }
+      }
+      if (inView && !reduced.matches) frame = requestAnimationFrame(render)
+    }
+
+    function refresh() {
+      cancelAnimationFrame(frame)
+      if (inView) frame = requestAnimationFrame(render)
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting
+      refresh()
+    })
+    observer.observe(root)
+    window.addEventListener('scroll', refresh, { passive: true })
+    window.addEventListener('resize', refresh)
+    reduced.addEventListener('change', refresh)
+    refresh()
+
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+      window.removeEventListener('scroll', refresh)
+      window.removeEventListener('resize', refresh)
+      reduced.removeEventListener('change', refresh)
     }
   }, [])
 
-  return <section className="film" id="baslangic" ref={track} aria-label="Orkestra sağanak hikâyesi">
-    <div className="film-markers" aria-hidden="true">
-      {shots.map((shot, index) => <span key={shot.id} id={index === 0 ? undefined : shot.id}
-        style={{ top: (index / timelineEnd) * 100 + '%' }} />)}
+  return <div className="journey" ref={journey} id="baslangic">
+    <div className="environment" aria-hidden="true">
+      <div className="world" ref={world}>
+        <img src="/orkestra-kesit.jpg" alt="" fetchPriority="high" width="1536" height="1024" />
+        <div className="well-water" />
+        <canvas width={1536} height={1024} ref={weather} />
+        <span className="world-label label-fire">Yangın</span>
+        <span className="world-label label-pressure">Hidrofor</span>
+        <span className="world-label label-drainage">Atık su</span>
+        <span className="world-label label-coordinator">Şef ajan</span>
+      </div>
     </div>
-    <div className="film-stage" ref={stage}>
-      {shots.map((shot, index) => <article key={shot.id} className={'film-shot film-' + shot.art}
-        ref={(element) => { shotNodes.current[index] = element }}>
-        <div className="film-art"><SceneArt scene={shot.art} scrollPosition={position}
-          shotIndex={index} playing={Math.abs(index - active) <= 1} /></div>
-        <div className="film-copy">
-          <p className="film-caption">{shot.caption}</p>
-          {index === 0 ? <h1>{shot.title}</h1> : <h2>{shot.title}</h2>}
-          <p className="film-dialogue">{shot.copy}</p>
+    <div className="journey-content">
+      <section className="journey-chapter introduction" aria-labelledby="introduction-title">
+        <div className="shell">
+          <p className="eyebrow">Water AI Hackathon · Prometheus</p>
+          <h1 id="introduction-title">Orkestra</h1>
+          <div className="opening-note">
+            <h2>Yağmur başladığında bodrumda ne oluyor?</h2>
+            <p>Yangın, hidrofor ve atık su pompaları ayrı çalışıyor. Orkestra, her birinin ölçümünü birleştirerek binanın su durumunu ortaya çıkarıyor.</p>
+            <a className="journey-link" href="#saganak">Bodruma in <ArrowDown size={16} /></a>
+          </div>
         </div>
-      </article>)}
-      <div className="film-top">
-        <a className="film-brand" href="#baslangic" aria-label="Orkestra, hikâyeyi yeniden başlat">Orkestra<span>.</span></a>
-        <a className="film-skip" href="#gorunumler">Hikâyeyi geç <ArrowRight size={16} /></a>
-      </div>
-      <div className="film-controls">
-        <nav className="film-nav" aria-label="Hikâye sahneleri">
-          {active > 0 && <a className="film-previous" aria-label="Önceki sahne"
-            href={'#' + shots[active - 1].id}><ArrowLeft size={18} /></a>}
-          {shots.map((shot, index) => <a className="film-step" key={shot.id} href={'#' + shot.id} aria-label={shot.caption}
-            aria-current={index === active ? 'step' : undefined} />)}
-        </nav>
-        <a className="film-next" href={active < shots.length - 1 ? '#' + shots[active + 1].id : '#gorunumler'}>
-          {active < shots.length - 1 ? 'Kaydır veya ilerle' : 'Arayüzleri aç'} <ArrowDown size={18} />
-        </a>
-      </div>
-      <div className="film-progress" aria-hidden="true" />
+      </section>
+      <section className="journey-chapter story-chapter" id="saganak" ref={rainScene} aria-labelledby="weather-title">
+        <div className="shell">
+          <article className="story-note">
+            <p className="eyebrow"><Droplets size={16} /> A Blok · Sağanak · Örnek olay</p>
+            <h2 id="weather-title">Yağmur suyu kuyuda birikiyor.</h2>
+            <p>Yağmur hızlanıyor. Bodrumdaki atık su kuyusu dolmaya başlıyor. Orkestra, seviyeyi bu binanın geçmişinde aynı saatlerde görülen %35–50 aralığıyla karşılaştırıyor.</p>
+            <div className="story-readout"><span>Kuyu seviyesi</span><output ref={readout} aria-live="off">%36</output></div>
+            <p>Kuyu %78’e ulaştığında atık su ajanı sapmayı şef ajana bildiriyor. Binanın diğer iki sisteminin durumu da aynı anda değerlendiriliyor.</p>
+          </article>
+        </div>
+      </section>
+      <section className="journey-chapter story-chapter agent-chapter" id="ortak-karar" ref={agents} aria-labelledby="agent-title">
+        <div className="shell">
+          <article className="story-note">
+            <p className="eyebrow"><GitMerge size={16} /> Dijital ikiz · Örnek olay</p>
+            <h2 id="agent-title">Üç pompa, tek değerlendirme.</h2>
+            <p>Pompa ajanları kendi ölçümlerini ve geçmişlerini takip ediyor. Şef ajan, ayrı bulguların aynı bina için ne anlama geldiğini birleştiriyor.</p>
+            <ul className="agent-evidence">
+              {pumps.map((pump) => {
+                const Icon = pumpIcons[pump.type]
+                return <li key={pump.id} className={pump.type}>
+                  <Icon size={18} /><div><strong>{pump.name} · {pump.reading}</strong><p>{pump.observation}</p></div>
+                </li>
+              })}
+            </ul>
+            <div className="story-result"><strong>Teknisyene öneri</strong><p>Kuyuyu ve şamandırayı kontrol edin. Örnek olayda hidrofor basıncı olağan aralıkta, yangın paneli hazır.</p></div>
+          </article>
+        </div>
+      </section>
+      {children}
     </div>
-  </section>
+  </div>
 }

@@ -3,17 +3,16 @@ import type { KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Activity, ArrowRight, AudioLines, Bell, Building2, Check,
-  ChevronRight, Droplet, Flame, Gauge, Layers3, Menu,
-  ShieldCheck, Target, Timer, Waves, Wrench, X,
+  ChevronRight, Droplet, Layers3, Menu, Pause, Play,
+  ShieldCheck, Target, Timer, Wrench, X,
 } from 'lucide-react'
 import { canvasAnswers, pumps, roles, team, telemetry } from './content'
 import type { Role } from './content'
-import { Film } from './Film'
+import { Journey, usePresentation } from './Film'
 import './styles.css'
 import './comic.css'
 import './film.css'
 
-const icons = { fire: Flame, pressure: Gauge, drainage: Waves }
 const roleIcons = { manager: Building2, technician: Wrench, resident: Bell, wilo: Layers3 }
 
 function Brand() {
@@ -25,6 +24,7 @@ function Brand() {
 
 function Header() {
   const [open, setOpen] = useState(false)
+  const presentation = usePresentation()
 
   return <header className="site-header">
     <div className="shell header-inner">
@@ -34,37 +34,18 @@ function Header() {
         {open ? <X size={23} /> : <Menu size={23} />}
       </button>
       <nav id="navigation" className={open ? 'nav open' : 'nav'} aria-label="Ana menü">
-        <a href="#baslangic" onClick={() => setOpen(false)}>Hikâye</a>
-        <a href="#gorunumler" onClick={() => setOpen(false)}>Arayüzler</a>
-        <a href="#kanvas" onClick={() => setOpen(false)}>Proje kanvası</a>
+        <a href="#baslangic" onClick={() => { setOpen(false); presentation.pause() }}>Hikâye</a>
+        <a href="#saganak" onClick={() => { setOpen(false); presentation.pause() }}>Sağanak</a>
+        <a href="#ortak-karar" onClick={() => { setOpen(false); presentation.pause() }}>Ajanlar</a>
+        <a href="#gorunumler" onClick={() => { setOpen(false); presentation.pause() }}>Arayüzler</a>
+        <a href="#kanvas" onClick={() => { setOpen(false); presentation.pause() }}>Proje kanvası</a>
       </nav>
-      <a className="header-action" href="#gorunumler">Arayüzleri incele <ArrowRight size={16} /></a>
+      <button type="button" aria-pressed={presentation.playing} className="presentation-toggle" onClick={presentation.toggle}>
+        {presentation.playing ? <Pause size={16} /> : <Play size={16} />}
+        {presentation.playing ? 'Duraklat' : 'Sunumu oynat'}
+      </button>
     </div>
   </header>
-}
-
-function PumpReadings() {
-  return <section className="section readings-section" id="olcumler" aria-labelledby="readings-title">
-    <div className="shell">
-      <p className="eyebrow"><span className="signal" /> Sağanak · Örnek veri</p>
-      <h2 id="readings-title">Ajanlar ne görüyor?</h2>
-      <div className="pump-grid" aria-label="Örnek pompa ölçümleri">
-        {pumps.map((pump) => {
-          const Icon = icons[pump.type]
-          return <article className={'pump-card ' + pump.type} key={pump.id}>
-            <div className="pump-top"><span className="pump-icon"><Icon size={21} /></span><span>{pump.id}</span></div>
-            <h3>{pump.name}</h3>
-            <p className="reading">{pump.reading}</p>
-            <dl>
-              <div><dt>Ölçüm</dt><dd>{pump.signal}</dd></div>
-              <div><dt>Olağan durum</dt><dd>{pump.baseline}</dd></div>
-            </dl>
-            <p className="observation">{pump.observation}</p>
-          </article>
-        })}
-      </div>
-    </div>
-  </section>
 }
 
 function Manager() {
@@ -224,7 +205,7 @@ function ProjectCanvas() {
       </dl>
       <div className="answers">
         {canvasAnswers.map(({ question, answer, note }, index) => <article className="answer-card" key={question}>
-          <h3><span>{String(index + 1).padStart(2, '0')}</span>{question}</h3>
+          <h3><span>{String(index + 1).padStart(2, '0')}</span>{' '}{question}</h3>
           <p>{answer}</p>
           {note && <p className="answer-note">{note}</p>}
         </article>)}
@@ -241,11 +222,11 @@ function App() {
   return <>
     <a className="skip-link" href="#icerik">İçeriğe geç</a>
     <main id="icerik" tabIndex={-1}>
-      <Film />
       <Header />
-      <RoleViews />
-      <PumpReadings />
-      <Pilot />
+      <Journey>
+        <RoleViews />
+        <Pilot />
+      </Journey>
       <ProjectCanvas />
     </main>
     <footer className="site-footer"><div className="shell footer-inner"><Brand /><p>Wilo için çok ajanlı pompa yönetimi konsepti</p></div></footer>

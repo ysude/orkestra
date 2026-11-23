@@ -1,6 +1,6 @@
 # Orkestra
 
-Orkestra, yangın, hidrofor ve atık su pompalarının ölçümlerini bina ölçeğinde birleştiren çok ajanlı yönetim konseptidir. Bu Türkçe sunum sitesi, tek bir sağanak senaryosunu ve aynı olay için dört örnek kullanıcı görünümünü içerir. Bütün ölçümler temsilidir.
+Orkestra, yangın, hidrofor ve atık su pompalarının ölçümlerini bina ölçeğinde birleştiren çok ajanlı yönetim konseptidir. Aynı 2B bina kesiti boyunca yağmur, kuyudaki su seviyesi ve ajan sinyalleri canlanır. Örnek ekranlar temsili veri kullanır.
 
 ## Yerel kurulum
 
@@ -10,28 +10,24 @@ Node.js 22 ile proje klasöründe çalıştırın.
     npm run dev
     npm run build
 
-Geliştirme sunucusu varsayılan olarak http://localhost:5173 adresinde açılır. Windows PowerShell yürütme ilkesi npm betiğini engellerse komutlarda npm yerine npm.cmd kullanın. Üretim dosyaları dist klasörüne yazılır.
+Geliştirme sunucusu varsayılan olarak http://localhost:5173 adresinde açılır. Windows PowerShell yürütme ilkesi npm betiğini engellerse npm.cmd kullanın. Üretim dosyaları dist klasörüne yazılır.
 
-## 135 saniyelik jüri akışı
+## 180 saniyelik jüri akışı
 
-Kronometreyi ilk cümlede başlatın. Kaydırma ve sekme geçişlerini süreye dahil edin. Kabul aralığı 120–150 saniye.
+Sunumu oynat, açılıştan Proje Fikri Kanvası’na kadar yaklaşık üç dakikada ilerler. Kaydırma ve bağlantılarla manuel sunum da yapılabilir. Otomatik oynatma sırasında etkileşim sunumu duraklatır.
 
-| Süre | Ekran ve sunum metni |
+| Süre | Anlatım |
 | --- | --- |
-| 0–20 sn | **Açılış.** Bir apartmanın bodrumunda üç ayrı pompa sistemi çalışıyor. Yangın seti hazır bekliyor, hidrofor dairelere su basıncı sağlıyor, atık su pompası kuyuyu boşaltıyor. Orkestra bu sistemlerin verisini birleştirip binada neler olduğunu tek ekranda gösteriyor. Açılışta kısa bir duraklamadan sonra kaydırarak bodruma inin. |
-| 20–65 sn | **Senaryo.** Sağanak başladığında kuyu seviyesi yüzde 78’e çıkıyor. Atık su ajanı bunu aynı saatlerdeki olağan yüzde 35–50 aralığıyla karşılaştırıyor ve sapmayı işaretliyor. Hidrofor ajanı, 3,4 bar ölçülen basıncın olağan aralıkta olduğunu görüyor. Yangın ajanı panelin hazır olduğunu bildiriyor. Dijital ikiz bu sinyalleri aynı bina bağlamına yerleştiriyor. Şef ajan üç bulguyu birleştirip teknisyene kuyu ve şamandıra kontrolü öneriyor. Böylece ekip hangi ölçümün değiştiğini ve nereden başlayacağını görüyor. |
-| 65–100 sn | **Arayüzler.** Yönetici açık olayı, sistemlerin durumunu ve bildirim tercihini web panelinden görüyor. **Sakin** sekmesini açın. Sakin, teknik ekibin kuyuyu incelediğini telefondan öğreniyor. **Binada su kesintisi var mı?** sorusunu açın. Örnek yanıt, hidroforun olağan çalıştığını söylüyor. Teknisyen ölçüm geçmişine ve öneriye, Wilo ise bina grubu görünümüne erişebilecek. |
-| 100–135 sn | **Pilot.** Uygun bir Wilo kurulumunda mevcut kontrol altyapısından salt okunur veri alarak başlamak istiyoruz. İlk adım model uyumunu ve gerekli verilere erişimi doğrulamak. Aynı olay kayıtlarında sabit eşiği, bağımsız ajanları ve şef ajanlı yaklaşımı karşılaştıracağız. Erken uyarı süresini, yanlış alarmları ve bina başına plansız pompa olaylarını ölçeceğiz. Yeni pompalar ve bina grupları eklendikçe ortak görünüm tek binadan siteye ve şehir ölçeğine genişleyebilir. |
+| 0–30 sn | **Sokak.** Yağmur hızlanıyor. Bu binada yangın, hidrofor ve atık su sistemleri farklı görevler üstleniyor. Üç ayrı sinyali bir araya getirdiğimizde binada gerçekten ne olduğunu görebiliyoruz. |
+| 30–70 sn | **Bodrum.** Yağmur suyu kuyuda birikiyor. Atık su ajanı, seviyeyi bu binanın olağan yüzde 35–50 aralığıyla karşılaştırıyor. Kuyu yüzde 78’e çıkınca bulguyu şef ajana iletiyor. |
+| 70–110 sn | **Ajanlar.** Hidrofor basıncı olağan aralıkta, yangın paneli hazır. Dijital ikiz bu ölçümleri aynı bina bağlamına yerleştiriyor. Şef ajan kuyunun ve şamandıranın kontrolünü öneriyor. |
+| 110–145 sn | **Arayüzler.** Yönetici özet ve bildirim tercihlerini, teknisyen ölçüm geçmişini, Wilo filo durumunu görüyor. Sakin görünümünü açın ve örnek su kesintisi sorusunu gösterin. |
+| 145–180 sn | **Pilot.** Mevcut Wilo bağlantısından salt okunur veriyle tek binada başlayın. Aynı olaylarda sabit eşik, bağımsız ajanlar ve şef ajanı karşılaştırın. Erken uyarı süresi, yanlış alarm ve plansız pompa olaylarını izleyin. Kanvas sekiz jüri sorusunun ayrıntılarını içerir. |
 
-## 24 Kasım akşamı devri
+Film.tsx ortak bina sahnesini ve hareketleri, film.css kamera yerleşimini, content.ts ise örnek ölçümleri ve jüri kanvasını içerir. Görsel renkler Wilo’nun petrol yeşili ve açık nötrlerinden esinlenir.
 
-- Çalışan ilk sürüm main dalında. Son düzenlemeler için buradan polish dalını açın.
-- Tam ekran hikâye ve kaydırma zaman çizelgesi src/Film.tsx ile src/film.css içinde. Canvas çizimleri src/SceneArt.tsx içinde. Pompa ve rol verileriyle kanvas yanıtları src/content.ts içinde.
-- Son görsel turda 390 px telefonda kahraman görselini, sağanak sahnesine geçişi ve sakin ekranını inceleyin. 1440 px genişlikte sahne vurgularını ve klavyeyle rol sekmelerini doğrulayın. Hareket azaltma ayarında içeriği yeniden kontrol edin.
-- Prova sırasında sahne ve sekme geçişlerini kronometreyle ölçün. Son derleme çalışınca polish değişikliklerini main dalına birleştirin.
+## Görsel
 
-## Görsel anlatım
+ImageGen ile üretilen çağdaş mimari kesit public/orkestra-kesit.jpg dosyasındadır. Yağmur, kuyu suyu ve sinyal parçacıkları site içinde hareket eder.
 
-Dört özgün 2B sahne, masaüstünde ve telefonda aynı sabit ekranı kullanır. Kaydırma kamerayı bodruma indirir, kuyu seviyesini yükseltir ve şef ajana giden sinyalleri sıraya koyar. Sahne düğmeleriyle ileri veya geri gidilebilir. Hareket azaltma tercihi açıkken çizimler sabit ve dikey sırada sunulur.
-
-Jüri akışının ardından Proje Fikri Kanvası sekiz sorunun yanıtını ve ekip bilgilerini gösterir. Saha verisi ve entegrasyon doğrulaması pilot adımları olarak işaretlenmiştir.
+> A pristine, modern premium architectural cutaway illustration for an interactive corporate water engineering website. Wide landscape 3:2 image, straight-on front sectional elevation with subtle precise 3D depth. Professional contemporary architectural studio rendering with crisp solid material surfaces and accurate straight thin architectural lines, graphic editorial realism, no photography. Absolutely NO paper grain, vintage, watercolor, sepia, scratch, paper collage, cartoon, comic, rounded toy geometry, black outlines or illustration frame. Visually alive from clear rainy urban daylight, reflective clean surfaces, deep petroleum teal shadows, vivid but restrained aquamarine water, fresh green trees, pale cool grey concrete and white architecture. One continuous ground line at exactly 53 percent of image height. Above ground: light blue-grey clouded sky and a modern four-storey apartment block in the right half, other softer contemporary city blocks in far background, leave the left quarter visually calm. Below ground: an open-section utility room taking up right 72 percent, with three separate realistic industrial green pump assemblies, connected metallic pipes, detailed professional engineered structure. At image right edge a visible deep straight vertical drainage well at x=91 to 97 percent, with still water LOW near the bottom at y=92 percent. Keep the cutaway ground level horizontal, the basement ceiling at y=55 percent, and the pump room floor at y=86 percent. Contemporary serious brand illustration with steel, petrol teal, controlled water-green accents and lively clean lighting. Edge to edge, little margin. No labels, no text, no logos, no UI, no arrows.
