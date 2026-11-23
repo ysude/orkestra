@@ -3,12 +3,22 @@ import { ArrowDown, Building2, Flame, Gauge, GitMerge, Waves } from 'lucide-reac
 import { pumps } from './content'
 import { drawNeighborhood, sceneHeight, sceneWidth } from './Neighborhood'
 import { scenarios } from './story'
+import type { CameraPoint } from './story'
 
 type Event = typeof scenarios[number]
 
 const icons = { fire: Flame, pressure: Gauge, drainage: Waves }
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
+const overview: CameraPoint = [780, 425, 1.03]
+
+function interpolateCamera(from: CameraPoint, to: CameraPoint, weight: number): CameraPoint {
+  return [
+    from[0] + (to[0] - from[0]) * weight,
+    from[1] + (to[1] - from[1]) * weight,
+    from[2] + (to[2] - from[2]) * weight,
+  ]
+}
 
 function Opening() {
   return <section className="opening" id="baslangic" aria-labelledby="opening-title">
@@ -26,17 +36,16 @@ function Opening() {
 }
 
 function Context() {
-  return <section className="context-note incident-note layout-left" id="ihtiyac" aria-labelledby="ihtiyac-title">
-    <div className="shell">
-      <div className="motion-copy">
-        <p className="eyebrow"><Building2 size={16} /> A Blok · Günün başlangıcı</p>
-        <h2 id="ihtiyac-title">Üç pompa, üç ayrı ekran.</h2>
-        <p className="motion-story">Yangın, hidrofor ve atık su pompaları ayrı kontrolörlerle çalışıyor. Uyumlu kurulumlarda Wilo Smart Connect cihazları uzaktan görünür kılıyor. Binanın ortak durumunu bugün ekip, ayrı uyarılardan çıkarıyor.</p>
-        <p className="motion-story">Yönetici ne olduğunu, teknisyen nereden başlayacağını, sakin ise su hizmetinin etkilenip etkilenmediğini bilmek istiyor.</p>
-        <p className="context-bridge">Orkestra, her pompanın geçmişini öğrenen ajanların bulgularını şef ajanla birleştiriyor.</p>
-      </div>
+  return <div className="motion-copy">
+    <div>
+      <p className="eyebrow"><Building2 size={16} /> A Blok · Günün başlangıcı</p>
+      <h2>Üç pompa, üç ayrı ekran.</h2>
     </div>
-  </section>
+    <div className="scene-explanation">
+      <p className="motion-story">Yangın, hidrofor ve atık su pompaları ayrı kontrolörlerle çalışıyor. Uyumlu kurulumlarda Wilo Smart Connect cihazları uzaktan görünür kılıyor. Binanın ortak durumunu ekip, ayrı uyarılardan çıkarıyor.</p>
+      <p className="motion-story">Yönetici durumu, teknisyen sorunun kaynağını, sakin su hizmetinin etkilenip etkilenmediğini bilmek istiyor. Orkestra bu bulguları şef ajanla birleştiriyor.</p>
+    </div>
+  </div>
 }
 
 
@@ -83,33 +92,38 @@ function Decision({ event }: { event: Event }) {
 }
 
 function IncidentNote({ event }: { event: Event }) {
-  return <section id={event.id} className={'incident-note layout-' + event.placement}
-    aria-labelledby={event.id + '-title'}>
-    <div className="shell">
-      <div className="motion-copy">
-        <p className="eyebrow">A Blok · {event.time} · {event.label}</p>
-        <h2 id={event.id + '-title'}>{event.title}</h2>
+  return <div className={'motion-copy layout-' + event.placement}>
+    <div>
+      <p className="eyebrow">A Blok · {event.time} · {event.label}</p>
+      <h2>{event.title}</h2>
+    </div>
+    <div className="scene-explanation">
         <p className="motion-story">{event.story}</p>
         <div className="motion-reading">
           <span>{event.measure} · Örnek veri</span>
           <strong>{event.initial} <span aria-hidden="true">→</span> {event.final}</strong>
           <small>{event.baseline}</small>
         </div>
-      </div>
     </div>
-  </section>
+  </div>
 }
 
 function Incident() {
   const section = useRef<HTMLDivElement>(null)
   const stage = useRef<HTMLDivElement>(null)
+  const viewfinder = useRef<HTMLDivElement>(null)
+  const plate = useRef<HTMLDivElement>(null)
+  const captions = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const root = section.current
     const graphic = stage.current
+    const view = viewfinder.current
+    const drawing = plate.current
+    const captionRail = captions.current
     const context = canvas.current?.getContext('2d')
-    if (!root || !graphic || !context) return
+    if (!root || !graphic || !view || !drawing || !captionRail || !context) return
 
     const notes = scenarios.map((event) => document.getElementById(event.id))
     const decisions = scenarios.map((event) => document.getElementById(event.decisionId))
@@ -117,9 +131,11 @@ function Incident() {
     let frame = 0
     let visible = false
     let lastDraw = -Infinity
+    let activeCaption = -1
+    let captionsCovered = false
 
     function draw(time: number) {
-      if (!graphic || !context) return
+      if (!graphic || !context || !view || !drawing || !captionRail) return
       if (time - lastDraw >= 27 || reduced.matches) {
         const header = document.querySelector('header')?.offsetHeight ?? 0
         const viewport = window.innerHeight - header
@@ -135,25 +151,40 @@ function Incident() {
           return ease(clamp((viewport * .58 - top) / (viewport * .50))) *
             ease(clamp((top + height - viewport * .33) / (viewport * .57)))
         })
+        const focus = Math.max(...decisionFocus)
         const [rain, clear, dusk] = progress
-        let x = 0
-        let y = 0
-        let zoom = 1
-        scenarios.forEach(({ camera }, index) => {
-          const weight = progress[index]
-          x += (camera[0] - x) * weight
-          y += (camera[1] - y) * weight
-          zoom += (camera[2] - zoom) * weight
+        let camera = overview
+        scenarios.forEach(({ camera: [from, to] }, index) => {
+          const beat = progress[index]
+          const entry = ease(clamp(beat / .32))
+          const pan = ease(clamp((beat - .20) / .73))
+          camera = interpolateCamera(camera, interpolateCamera(from, to, pan), entry)
         })
+        const [x, y, zoom] = camera
+        const width = view.clientWidth
+        const height = view.clientHeight
+        const scale = Math.max(width / sceneWidth, height / sceneHeight) * zoom
+        const translateX = Math.min(0, Math.max(width - sceneWidth * scale, width / 2 - x * scale))
+        const translateY = Math.min(0, Math.max(height - sceneHeight * scale, height / 2 - y * scale))
+        drawing.style.transform = reduced.matches ? '' : 'translate3d(' + translateX + 'px,' + translateY + 'px,0) scale(' + scale + ')'
+
+        const nextCaption = notes.findLastIndex((node) => distance(node) <= viewport * .38) + 1
+        if (nextCaption !== activeCaption) {
+          activeCaption = nextCaption
+          Array.from(captionRail.children).forEach((caption, index) => {
+            caption.classList.toggle('is-current', index === activeCaption)
+            caption.setAttribute('aria-hidden', String(index !== activeCaption))
+          })
+        }
+        if (captionsCovered !== (focus > .55)) {
+          captionsCovered = focus > .55
+          captionRail.setAttribute('aria-hidden', String(captionsCovered))
+        }
 
         drawNeighborhood(context, reduced.matches
           ? { rain: 0, clear: 0, dusk: 0, time: 0, moving: false }
           : { rain, clear, dusk, time: time / 1000, moving: true })
-        graphic.style.setProperty('--pan-x', x + 'px')
-        graphic.style.setProperty('--pan-y', y + 'px')
-        graphic.style.setProperty('--zoom', String(zoom))
-        graphic.style.setProperty('--mobile-pan', (-12 - rain * 19 + clear * 16 - dusk * 4) + '%')
-        graphic.style.setProperty('--focus', String(Math.max(...decisionFocus)))
+        graphic.style.setProperty('--focus', String(focus))
         lastDraw = time
       }
       if (visible && !reduced.matches) frame = requestAnimationFrame(draw)
@@ -184,14 +215,24 @@ function Incident() {
   }, [])
 
   return <div className="incident" ref={section} aria-label="A Blok · Aynı mahallede bir gün">
-    <div className="incident-stage" ref={stage} role="img"
-      aria-label="Sokak, komşu binalar, park, araçlar ve A Blok’un üç pompalı bodrumunu gösteren mahalle kesiti">
-      <div className="incident-plate"><canvas ref={canvas} width={sceneWidth} height={sceneHeight} aria-hidden="true" /></div>
+    <div className="incident-stage" ref={stage}>
+      <div className="incident-viewfinder" ref={viewfinder} role="img"
+        aria-label="Sokak, komşu binalar, park, araçlar ve A Blok’un üç pompalı bodrumunu gösteren mahalle kesiti">
+        <div className="incident-plate" ref={plate}><canvas ref={canvas} width={sceneWidth} height={sceneHeight} aria-hidden="true" /></div>
+      </div>
+      <div className="scene-captions" ref={captions}>
+        <div className="scene-caption is-current"><Context /></div>
+        {scenarios.map((event) => <div className="scene-caption" key={event.id} aria-hidden="true"><IncidentNote event={event} /></div>)}
+      </div>
     </div>
     <div className="incident-story">
-      <Context />
+      <section className="incident-note context-note" id="ihtiyac" aria-label="Günün başlangıcı">
+        <div className="static-caption shell"><Context /></div>
+      </section>
       {scenarios.map((event) => <div key={event.id}>
-        <IncidentNote event={event} />
+        <section className="incident-note" id={event.id} aria-label={event.title}>
+          <div className="static-caption shell"><IncidentNote event={event} /></div>
+        </section>
         <Decision event={event} />
       </div>)}
     </div>

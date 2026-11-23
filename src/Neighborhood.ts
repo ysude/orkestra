@@ -80,6 +80,19 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     ctx.fillText(value, x, y)
   }
 
+  function sceneTag(title: string, value: string, x: number, y: number, width: number, accent: string) {
+    rect(x + 3, y + 4, width, 48, '#31564b24')
+    rect(x, y, width, 48, '#f6faf3', accent)
+    rect(x, y, 4, 48, accent)
+    ctx.textAlign = 'left'
+    ctx.font = '600 12px "Segoe UI", sans-serif'
+    ctx.fillStyle = ink
+    ctx.fillText(title, x + 12, y + 17)
+    ctx.font = '700 19px "Segoe UI", sans-serif'
+    ctx.fillStyle = accent
+    ctx.fillText(value, x + 12, y + 39)
+  }
+
   function tree(x: number, y: number, size: number, shrub: string) {
     ctx.save()
     ctx.translate(x, y)
@@ -436,12 +449,29 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   path([[1151,waterY + 2],[1162,waterY + 3],[1174,waterY + 1],[1187,waterY + 2]], '#c9e9d9', 1.5)
   label('Kuyu', 1168, 719)
 
+  if (weather > .13) {
+    ctx.globalAlpha = Math.min(1, weather * 1.65)
+    path([[1166,511],[1166,527],[1192,553],[1192,621]], '#3a8f81', 3.2)
+    for (let drop = 0; drop < 4; drop++) {
+      const travel = (time * 67 + drop * 28) % 118
+      const x = 1166 + Math.min(26, Math.max(0, travel - 16))
+      disc(x, 511 + travel * .92, 2.55, '#cff5e4')
+    }
+    path([[1189,waterY],[1210,waterY],[1210,625],[1217,625]], '#2b7d71', 2)
+    sceneTag('Drenaj kuyusu', '%' + Math.round(level), 1217, 602, 111, '#126755')
+    ctx.globalAlpha = 1
+  }
+
   if (clear > .04 && dusk < .95) {
     const pressure = clear * (1 - dusk)
     ctx.globalAlpha = Math.min(1, clear * 1.9) * (1 - dusk * .9)
-    rect(572, 87, 191, 79, '#f3f7ee', '#85a498')
-    path([[587,133],[622,133],[657,135],[692,134 + 11 * pressure],[748,134 + 21 * pressure]], '#368d7e', 2.5)
-    label('Üst kat basıncı', 667,115)
+    rect(566, 236, 212, 104, '#f3f7ee', '#688e83')
+    rect(583, 283, 177, 10, '#d4e9de')
+    path([[583,293],[760,293]], '#7da696', 1.2)
+    path([[583,288],[626,288],[667,288],[715,288 + 14 * pressure],[759,288 + 30 * pressure]], '#267a6c', 3)
+    disc(759, 288 + 30 * pressure, 4.3, '#1d7565')
+    const bar = (3.4 - pressure * .8).toFixed(1).replace('.', ',')
+    label('Üst kat · ' + bar + ' bar', 671,264)
     ctx.globalAlpha = 1
   }
 
@@ -453,7 +483,10 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
       disc(967 + lift * .31, 291 - lift, 8 + lift * .094, 'rgba(83,94,97,.34)')
     }
     rect(967,275,29,4,'#b46244')
-    path([[594,624],[594,609],[650,609]], '#a95d46', 2)
+    path([[594,641],[615,641],[615,612],[630,612]], '#a95d46', 2)
+    sceneTag('Yangın paneli', 'Alarm', 630, 587, 115, '#93513b')
+    path([[982,263],[1006,263],[1018,246]], '#a95d46', 2)
+    sceneTag('A Blok', 'Duman', 1018, 216, 102, '#93513b')
     ctx.globalAlpha = 1
   }
 

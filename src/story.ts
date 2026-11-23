@@ -2,6 +2,8 @@ import type { Pump } from './content'
 
 type Reading = { pump: Pump['type']; value: string; baseline: string; finding: string }
 
+export type CameraPoint = readonly [x: number, y: number, zoom: number]
+
 type Scenario = {
   id: string
   decisionId: string
@@ -15,7 +17,7 @@ type Scenario = {
   final: string
   baseline: string
   placement: 'left' | 'right' | 'bottom'
-  camera: [number, number, number]
+  camera: readonly [start: CameraPoint, end: CameraPoint]
   readings: Reading[]
   priority: string
   action: string
@@ -28,7 +30,7 @@ export const scenarios: Scenario[] = [
     title: 'Yağmur bodruma kadar ulaşıyor.',
     story: 'Sokak boşalırken su drenaj kuyusunda birikiyor. Atık su ajanı, seviyenin bu binada benzer saatlerde görülen aralığı geçtiğini fark ediyor.',
     measure: 'Kuyu seviyesi', initial: '%36', final: '%78', baseline: 'Olağan aralık %35–50',
-    placement: 'left', camera: [-35, -82, 1.22],
+    placement: 'left', camera: [[1045, 405, 1.27], [1158, 620, 1.62]],
     readings: [
       { pump: 'fire', value: 'Hazır', baseline: 'Beklenen: hazır', finding: 'Yangın paneli hazır.' },
       { pump: 'pressure', value: '3,4 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Kullanım suyu basıncı olağan.' },
@@ -43,7 +45,7 @@ export const scenarios: Scenario[] = [
     title: 'Hava açıyor. Bina yeniden doluyor.',
     story: 'Sakinler eve döndükçe su kullanımı artıyor. Kuyu seviyesi gerilerken hidrofor ajanı, üst kat basıncının bu saatlerdeki olağan aralığın altına düştüğünü görüyor.',
     measure: 'Üst kat basıncı', initial: '3,4 bar', final: '2,6 bar', baseline: 'Olağan aralık 3,2–3,6 bar',
-    placement: 'right', camera: [-94, -14, 1.12],
+    placement: 'right', camera: [[835, 435, 1.29], [685, 290, 1.52]],
     readings: [
       { pump: 'fire', value: 'Hazır', baseline: 'Beklenen: hazır', finding: 'Yangın panelinde uyarı yok.' },
       { pump: 'pressure', value: '2,6 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Eve dönüş saatinde basınç olağan aralığın altına indi.' },
@@ -58,7 +60,7 @@ export const scenarios: Scenario[] = [
     title: 'Akşam, yangın panelinden alarm geliyor.',
     story: 'Gün batarken binanın bir katında duman beliriyor. Yerel yangın paneli alarm bildiriyor. Ajan bu bilgiyi salt okunur izliyor ve şef ajana aktarıyor.',
     measure: 'Yerel yangın paneli', initial: 'Hazır', final: 'Yangın alarmı', baseline: 'Yerel kontrol panelde',
-    placement: 'bottom', camera: [48, -52, 1.18],
+    placement: 'bottom', camera: [[981, 280, 1.45], [613, 624, 1.61]],
     readings: [
       { pump: 'fire', value: 'Yangın alarmı', baseline: 'Önceki durum: hazır', finding: 'Yerel panel alarm durumuna geçti.' },
       { pump: 'pressure', value: '3,3 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Kullanım suyu basıncı olağan aralığa döndü.' },
