@@ -10,6 +10,10 @@ export type Neighborhood = {
   dusk: number
   time: number
   moving: boolean
+  introduce?: number
+  drained?: boolean
+  supported?: boolean
+  action?: { key: 'drainage' | 'pressure' | 'fire'; progress: number; time?: number }
 }
 
 function mix(first: string, second: string, factor: number) {
@@ -21,13 +25,22 @@ function mix(first: string, second: string, factor: number) {
   return 'rgb(' + channels.join(',') + ')'
 }
 
-export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, dusk, time, moving }: Neighborhood) {
+export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, dusk, time, moving, introduce, drained, supported, action }: Neighborhood) {
   const ink = '#365556'
   const paper = '#edf3e9'
   const mint = '#6fb2a2'
   const deep = '#1c5a54'
   const weather = rain * (1 - clear)
-  const level = 36 + 42 * rain - 17 * clear - 17 * dusk
+  const progress = action?.progress ?? 0
+  const travel = Math.min(1, Math.max(0, (progress - .22) / .78))
+  const applied = travel * travel * (3 - 2 * travel)
+  const drainage = action?.key === 'drainage'
+  const pressure = action?.key === 'pressure'
+  const fire = action?.key === 'fire'
+  const localFireRunning = fire && progress > .08
+  const level = 36 + 42 * rain - 17 * (drainage ? applied : drained ? 1 : clear) - 17 * dusk
+  const actionTime = action?.time ?? time
+  const bar = pressure ? 2.6 + .7 * applied : supported ? 3.3 : 3.4 - clear * (1 - dusk) * .8 - dusk * .1
   const sky = mix('9dc8cc', '263e58', dusk * .85)
   const horizon = mix('edf1dc', 'e6b487', dusk * .65)
 
@@ -96,6 +109,68 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     ctx.fillText(value, x + 12, y + 39)
   }
 
+  const agentIdentity = {
+    fire: { title: 'Yangın ajanı', color: '#963f35' },
+    pressure: { title: 'Hidrofor ajanı', color: '#215e7b' },
+    drainage: { title: 'Atık su ajanı', color: '#226857' },
+    chief: { title: 'Şef ajan', color: '#574274' },
+  }
+
+  function agentMarker(kind: keyof typeof agentIdentity, value: string, x: number, y: number) {
+    const { title, color } = agentIdentity[kind]
+    rect(x, y, 128, 32, '#f6faf3', color)
+    const cx = x + 16
+    const cy = y + 16
+    disc(cx, cy, 11, color)
+    const white = '#ffffff'
+    if (kind === 'chief') {
+      path([[cx - 5,cy],[cx,cy - 5],[cx + 5,cy],[cx,cy + 5],[cx - 5,cy]], white, 1.3)
+      disc(cx, cy, 2.2, white)
+    } else if (kind === 'fire') {
+      polygon([[cx - 5,cy + 2],[cx - 2,cy - 3],[cx - 1,cy - 1],[cx + 1,cy - 7],
+        [cx + 5,cy - 1],[cx + 5,cy + 3],[cx + 2,cy + 6],[cx - 3,cy + 5]], white)
+    } else if (kind === 'pressure') {
+      ctx.beginPath()
+      ctx.arc(cx, cy + 2, 6, Math.PI, 2 * Math.PI)
+      ctx.strokeStyle = white
+      ctx.lineWidth = 1.4
+      ctx.stroke()
+      path([[cx - 1,cy + 2],[cx + 3,cy - 2]], white, 1.6)
+    } else {
+      for (const offset of [-2, 3]) {
+        path([[cx - 6,cy + offset],[cx - 3,cy + offset - 2],[cx,cy + offset],
+          [cx + 3,cy + offset - 2],[cx + 6,cy + offset]], white, 1.5)
+      }
+    }
+    ctx.textAlign = 'left'
+    ctx.fillStyle = color
+    ctx.font = '700 12px "Segoe UI", sans-serif'
+    ctx.fillText(title, x + 33, y + 13)
+    ctx.fillStyle = ink
+    ctx.font = '600 10px "Segoe UI", sans-serif'
+    ctx.fillText(value, x + 33, y + 26)
+  }
+
+  function agentLink(points: number[][], fraction: number, color: string) {
+    ctx.save()
+    ctx.setLineDash([5, 4])
+    path(points, color, 2)
+    ctx.restore()
+    const [x, y] = pointOnPipe(points, fraction)
+    const [beforeX, beforeY] = pointOnPipe(points, Math.max(0, fraction - .04))
+    const angle = Math.atan2(y - beforeY, x - beforeX)
+    polygon([[x,y], [x - Math.cos(angle - .52) * 9, y - Math.sin(angle - .52) * 9],
+      [x - Math.cos(angle + .52) * 9, y - Math.sin(angle + .52) * 9]], color, '#f7fcf9')
+  }
+
+  function assignment(kind: 'pressure' | 'drainage' | 'fire', instruction: string,
+    chief: number[], agent: number[], route: number[][]) {
+    const command = Math.min(1, progress / .22)
+    agentLink(route, .12 + command * .77, agentIdentity.chief.color)
+    agentMarker('chief', instruction, chief[0], chief[1])
+    agentMarker(kind, command >= 1 ? 'Görev alındı' : 'Talimat geliyor', agent[0], agent[1])
+  }
+
   function tree(x: number, y: number, size: number, shrub: string) {
     ctx.save()
     ctx.translate(x, y)
@@ -133,6 +208,44 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     path(points.map(([x, y]) => [x - width * .18, y - width * .18]), '#f6ffed6c', Math.max(1, width * .19))
   }
 
+  function pointOnPipe(points: number[][], fraction: number) {
+    const segments = points.slice(1).map(([x, y], index) =>
+      Math.hypot(x - points[index][0], y - points[index][1]))
+    let distance = fraction * segments.reduce((sum, length) => sum + length, 0)
+    for (const [index, length] of segments.entries()) {
+      if (distance <= length) {
+        const [x, y] = points[index]
+        const [endX, endY] = points[index + 1]
+        return [x + (endX - x) * distance / length, y + (endY - y) * distance / length]
+      }
+      distance -= length
+    }
+    return points[points.length - 1]
+  }
+
+  function flow(points: number[][], color: string) {
+    path(points, color, 3.5)
+    for (let index = 0; index < 7; index++) {
+      const fraction = ((moving ? actionTime * .62 : .04) + index / 7) % 1
+      const [x, y] = pointOnPipe(points, fraction)
+      if (moving) disc(x, y, 3.2, '#f6fff2')
+      else {
+        const [nextX, nextY] = pointOnPipe(points, Math.min(1, fraction + .01))
+        const angle = Math.atan2(nextY - y, nextX - x)
+        path([
+          [x - Math.cos(angle - .65) * 5, y - Math.sin(angle - .65) * 5],
+          [x, y],
+          [x - Math.cos(angle + .65) * 5, y - Math.sin(angle + .65) * 5],
+        ], '#f6fff2', 1.7)
+      }
+    }
+  }
+
+  function valve(x: number, y: number, color: string) {
+    polygon([[x - 6,y - 4],[x + 6,y + 4],[x + 6,y - 4],[x - 6,y + 4]], color, '#4c6866')
+    path([[x,y],[x,y - 7],[x + 5,y - 7]], '#405f5d', 1.5)
+  }
+
   function gauge(x: number, y: number, angle: number) {
     disc(x, y, 8, '#486968')
     disc(x, y, 6.2, '#f5f7e9')
@@ -152,7 +265,7 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     path([[x + 5,y + 38],[x + width - 5,y + 38]], '#819991', 1)
   }
 
-  function verticalPump(x: number, floor: number, color: string, size = 1) {
+  function verticalPump(x: number, floor: number, color: string, size = 1, running = false) {
     ctx.save()
     ctx.translate(x, floor)
     ctx.scale(size, size)
@@ -162,6 +275,11 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     for (const y of [-47,-39,-31,-23]) rect(-11,y,22,2,'#d6e3d7', '#789b92')
     rect(-14, -15, 28, 12, color, '#3c645f')
     rect(-16, -3, 32, 3, '#546f68')
+    rect(-11, -64, 22, 4, running ? '#c2efb1' : '#345c5c')
+    if (running) {
+      const offset = moving ? (actionTime * 40) % 19 : 8
+      path([[-8,-61 + offset],[8,-61 + offset]], '#e6f7ca', 2)
+    }
     ctx.restore()
   }
 
@@ -416,9 +534,9 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     rect(x, 561, 60, 5, '#eff3de', '#9eb1a1')
   }
 
-  const fireColor = mix('a68672', 'bd6047', dusk)
-  const boosterColor = mix('6e999c', '4d9398', clear * (1 - dusk))
-  const drainColor = mix('719f89', '548f79', weather)
+  const fireColor = mix('ab5947', 'bd4e39', dusk)
+  const boosterColor = mix('567e91', '387f9c', clear * (1 - dusk))
+  const drainColor = mix('719f89', '527d66', weather)
   pipe([[574,581],[622,581],[622,620],[689,620],[689,657],[743,657]], 8, fireColor)
   pipe([[794,597],[794,582],[921,582],[921,625]], 8, boosterColor)
   pipe([[974,654],[974,579],[1134,579],[1134,627],[1168,627]], 8, drainColor)
@@ -428,7 +546,7 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   path([[687,618],[687,607]], '#58726a', 2)
   gauge(687, 604, dusk * 1.7 - 1.3)
   path([[904,581],[904,574]], '#58726a', 2)
-  gauge(904, 573, -.7 - clear * (1 - dusk) * 1.2)
+  gauge(904, 573, -2.45 + (bar - 2.6) * 2.45)
 
   rect(628, 681, 119, 11, '#d2ddd1', '#6e8f81')
   rect(638, 650, 53, 28, shade(638,650,638,678,'#b3c9b7','#73958a'), '#50776d')
@@ -437,6 +555,11 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   disc(714, 663, 17, '#52776e')
   disc(714, 663, 13, fireColor)
   disc(714, 663, 5, paper)
+  if (localFireRunning) {
+    const angle = (moving ? actionTime : .3) * 11
+    path([[714 - Math.cos(angle) * 9,663 - Math.sin(angle) * 9],
+      [714 + Math.cos(angle) * 9,663 + Math.sin(angle) * 9]], '#fff0dc', 2.6)
+  }
   rect(713, 676, 18, 5, '#6f9086')
   cabinet(580, 620, 34, '#b98d7d', dusk > .43)
   label('Yangın seti', 686, 719)
@@ -445,7 +568,7 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   pipe([[793,674],[923,674]], 6, boosterColor)
   for (const x of [810, 853, 896]) {
     pipe([[x,628],[x,611],[916,611]], 4.2, boosterColor)
-    verticalPump(x, 680, boosterColor, .79)
+    verticalPump(x, 680, boosterColor, .79, pressure && travel > 0 && x === 853)
   }
   cabinet(916, 623, 29, '#9fbabc')
   label('Hidrofor', 863, 719)
@@ -453,15 +576,15 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   rect(987, 681, 122, 11, '#d1dcd0', '#6f8f81')
   for (const x of [1010, 1064]) {
     pipe([[x,639],[x,613],[1105,613],[1105,580]], 5, drainColor)
-    verticalPump(x, 680, drainColor, .70)
+    verticalPump(x, 680, drainColor, .70, drainage && travel > 0 && x === 1064)
   }
   cabinet(1086, 628, 30, '#a8bfad')
   label('Atık su', 1046, 719)
 
   const activeFlow = [
-    { x: 622, y: 586, intensity: dusk },
-    { x: 853, y: 614, intensity: clear * (1 - dusk) },
-    { x: 1134, y: 584, intensity: weather },
+    { x: 622, y: 586, intensity: action ? 0 : dusk },
+    { x: 853, y: 614, intensity: action ? 0 : clear * (1 - dusk) },
+    { x: 1134, y: 584, intensity: action ? 0 : weather },
   ]
   for (const { x, y, intensity } of activeFlow) {
     if (intensity < .09) continue
@@ -497,21 +620,22 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
       const x = 1166 + Math.min(26, Math.max(0, travel - 16))
       disc(x, 511 + travel * .92, 2.55, '#cff5e4')
     }
-    path([[1189,waterY],[1210,waterY],[1210,625],[1217,625]], '#2b7d71', 2)
-    sceneTag('Drenaj kuyusu', '%' + Math.round(level), 1217, 602, 111, '#126755')
+    if (!drainage) {
+      path([[1189,waterY],[1210,waterY],[1210,625],[1217,625]], '#2b7d71', 2)
+      sceneTag('Drenaj kuyusu', '%' + Math.round(level), 1217, 602, 111, '#126755')
+    }
     ctx.globalAlpha = 1
   }
 
-  if (clear > .04 && dusk < .95) {
-    const pressure = clear * (1 - dusk)
+  if (clear > .04 && dusk < .95 && !pressure) {
+    const pressureDrop = Math.max(0, (3.4 - bar) / .8)
     ctx.globalAlpha = Math.min(1, clear * 1.9) * (1 - dusk * .9)
     rect(566, 236, 212, 104, '#f3f7ee', '#688e83')
     rect(583, 283, 177, 10, '#d4e9de')
     path([[583,293],[760,293]], '#7da696', 1.2)
-    path([[583,288],[626,288],[667,288],[715,288 + 14 * pressure],[759,288 + 30 * pressure]], '#267a6c', 3)
-    disc(759, 288 + 30 * pressure, 4.3, '#1d7565')
-    const bar = (3.4 - pressure * .8).toFixed(1).replace('.', ',')
-    label('Üst kat · ' + bar + ' bar', 671,264)
+    path([[583,288],[626,288],[667,288],[715,288 + 14 * pressureDrop],[759,288 + 30 * pressureDrop]], '#267a6c', 3)
+    disc(759, 288 + 30 * pressureDrop, 4.3, '#1d7565')
+    label('Üst kat · ' + bar.toFixed(1).replace('.', ',') + ' bar', 671,264)
     ctx.globalAlpha = 1
   }
 
@@ -523,11 +647,83 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
       disc(967 + lift * .31, 291 - lift, 8 + lift * .094, 'rgba(83,94,97,.34)')
     }
     rect(967,275,29,4,'#b46244')
-    path([[594,641],[615,641],[615,612],[630,612]], '#a95d46', 2)
-    sceneTag('Yangın paneli', 'Alarm', 630, 587, 115, '#93513b')
+    if (!fire) {
+      path([[594,641],[615,641],[615,612],[630,612]], '#a95d46', 2)
+      sceneTag('Yangın paneli', 'Alarm', 630, 587, 115, '#93513b')
+    }
     path([[982,263],[1006,263],[1018,246]], '#a95d46', 2)
     sceneTag('A Blok', 'Duman', 1018, 216, 102, '#93513b')
     ctx.globalAlpha = 1
+  }
+
+  valve(649, 620, '#bc6656')
+  valve(831, 582, '#79afbe')
+  valve(1028, 579, '#88bc9e')
+
+  if (introduce) {
+    ctx.globalAlpha = introduce
+    const agents = [
+      ['fire', 'Panel durumu', 576, 836],
+      ['pressure', 'Basınç', 781, 872],
+      ['drainage', 'Kuyu seviyesi', 1002, 907],
+    ] as const
+    for (const [kind, reading, x, to] of agents) {
+      const anchor = x + 64
+      const signal = [[anchor,541],[anchor,533],[to,533],[to,520]].filter(([x, y], i, points) =>
+        i === 0 || x !== points[i - 1][0] || y !== points[i - 1][1])
+      agentLink(signal, moving ? .1 + ((time * .48 + x / 10) % 1) * .82 : .82, agentIdentity[kind].color)
+      agentMarker(kind, reading, x, 541)
+    }
+    agentMarker('chief', 'Ölçümleri toplar', 805, 488)
+    ctx.globalAlpha = 1
+  }
+
+  if (drainage) {
+    const suction = [[1169,723],[1169,692],[1064,692],[1064,672]]
+    const outlet = [[1064,639],[1064,613],[1105,613],[1105,579],[1134,579],[1134,523],[1299,523]]
+    pipe(suction, 6, '#719f89')
+    pipe(outlet, 7, '#719f89')
+    if (travel > 0) {
+      flow(suction, '#278c70')
+      flow(outlet, '#278c70')
+    }
+    path([[1190,waterY],[1211,waterY],[1211,626],[1220,626]], '#126755', 2)
+    sceneTag('Kuyu seviyesi', '%' + Math.round(level), 1220, 602, 116, '#126755')
+    label('Tahliye hattı', 1240, 517)
+    assignment('drainage', 'Tahliyeyi uygula', [1180,550], [990,548],
+      [[1180,565],[1146,565],[1146,564],[1118,564]])
+  }
+
+  if (pressure) {
+    const riser = [[853,628],[853,611],[921,611],[921,582],[903,582],[903,260],[774,260]]
+    pipe(riser, 6, '#567e91')
+    for (const y of [309, 356]) {
+      pipe([[903,y],[863,y]], 4, '#567e91')
+    }
+    if (travel > 0) flow(riser, '#217da5')
+    gauge(903, 535, -2.45 + (bar - 2.6) * 2.45)
+    sceneTag('Üst kat basıncı', bar.toFixed(1).replace('.', ',') + ' bar', 615, 236, 155, '#215d77')
+    label('Üst kat hattı', 825, 248, '#215d77')
+    assignment('pressure', 'Desteği uygula', [640,521], [779,553],
+      [[704,553],[704,569],[779,569]])
+  }
+
+  if (fire) {
+    const supply = [[523,696],[563,696],[563,678],[636,678],[636,663],[714,663],[714,657],[689,657],[689,620],[622,620],[622,581],[574,581]]
+    if (localFireRunning) flow(supply, '#ad523b')
+    const alarmReading = [[594,638],[558,638],[558,571],[578,571]]
+    agentLink(alarmReading, .85, '#963f35')
+    const notification = [[706,578],[741,578],[741,566],[839,566]]
+    agentLink(notification, .12 + travel * .78, '#1a6755')
+    assignment('fire', 'Alarmı ilet', [729,510], [578,555],
+      [[729,525],[717,525],[717,560],[706,560]])
+    label('Yerel panel', 591, 689, '#923d33')
+    sceneTag('Teknik ekip', progress >= 1 ? 'Teslim edildi' : travel > 0 ? 'İletiliyor' : 'Sırada', 733, 594, 149, '#1a6755')
+    rect(839, 546, 30, 42, '#1e6556', '#164a42')
+    rect(843, 551, 22, 28, '#e3f5e6')
+    if (progress >= 1) path([[847,566],[852,570],[861,559]], '#218067', 2.8)
+    else path([[849,560],[859,560],[859,566],[849,566],[849,560]], '#256d60', 1.4)
+    disc(854, 584, 1.5, '#daefe0')
   }
 
   ctx.globalAlpha = weather * .8

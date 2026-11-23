@@ -12,6 +12,17 @@ Node.js 22 ile proje klasöründe çalıştırın.
 
 Geliştirme sunucusu varsayılan olarak http://localhost:5173 adresinde çalışır. Windows PowerShell yürütme ilkesi npm betiğini engellerse npm.cmd kullanın.
 
+## Docker ile çalıştırma
+
+Proje klasöründe imajı oluşturup konteyneri başlatın.
+
+```sh
+docker build -t orkestra .
+docker run --rm -p 127.0.0.1:8080:80 orkestra
+```
+
+Sunumu http://localhost:8080 adresinden açın. İmaj, Node.js 22 ile derlenen statik dosyaları Nginx üzerinden sunar.
+
 ## 195 saniyelik jüri akışı
 
 Sunumu oynat, açılıştan pilot ekranının sonuna kadar ilerler. Sunumu duraklatıp kaydırabilir veya üst menüden ilgili bölüme geçebilirsiniz. Baştan oynat, kapanıştan sonra sunumu yeniden başlatır.
@@ -40,4 +51,4 @@ Sunumu oynat, açılıştan pilot ekranının sonuna kadar ilerler. Sunumu durak
 | Beklenen su etkisi | Pilot ekranındaki erken uyarı, yanlış alarm ve plansız olay ölçütleri |
 | İlk test | Aynı olay kayıtlarında üç yöntemin karşılaştırması ve başarı ölçütü |
 
-Mahalle, geniş bir Canvas kompozisyonu olarak çizilir. Olaylar boyunca hava, aydınlatma ve kamera değişir. Pompa odası değerlendirmeleri kararın alınmasını, uygulanmasını ve sonucun ekranda doğrulanmasını gösterir. Hareket azaltma tercihi açıkken mahalle çizimi ve anlatım sabit görünür.
+Mahalle, geniş bir Canvas kompozisyonu olarak çizilir. Ajanlar aynı bina kesitinde tanıtılır. Her pompa odası değerlendirmesinden sonra kamera uygulamaya döner. Tahliye 61. saniyede, hidrofor desteği 92. saniyede ve yangın alarmı iletimi 130. saniyede başlar. Hareket azaltma tercihinde uygulama sonuçları aynı ekipman üzerinde sabit olarak gösterilir.

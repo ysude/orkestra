@@ -217,7 +217,7 @@ function App() {
     <a className="skip-link" href="#icerik">İçeriğe geç</a>
     <main id="icerik" tabIndex={-1}>
       <Header presentation={presentation} />
-      <Journey />
+      <Journey playing={presentation.playing} />
       <RoleViews presentation={presentation} />
       <Pilot />
     </main>

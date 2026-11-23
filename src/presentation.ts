@@ -89,5 +89,12 @@ export function usePresentation() {
     }
   }, [playing])
 
-  return { playing, second, toggle: () => setPlaying((current) => !current), pause: () => setPlaying(false) }
+  function toggle() {
+    if (playing) {
+      window.scrollTo({ top: checkpoint.current.scroll, behavior: 'instant' })
+    }
+    setPlaying(!playing)
+  }
+
+  return { playing, second, toggle, pause: () => setPlaying(false) }
 }

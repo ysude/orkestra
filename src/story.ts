@@ -23,7 +23,7 @@ type Scenario = {
   priority: string
   action: string
   reason: string
-  execution: { start: string; running: string; result: string; metric: string; before: string; after: string }
+  execution: { id: string; title: string; camera: CameraPoint; start: string; running: string; result: string; metric: string; before: string; after: string }
 }
 
 export const scenarios: Scenario[] = [
@@ -45,6 +45,8 @@ export const scenarios: Scenario[] = [
     action: 'Drenaj kaydı aç ve kontrollü tahliye iste.',
     reason: 'Kuyu seviyesi yüksek. Hidrofor ve yangın sistemlerinde eşzamanlı sapma yok.',
     execution: {
+      id: 'tahliye', title: 'Atık su pompası kuyuyu boşaltıyor.',
+      camera: [1174, 604, 1.06, [963, 493, 1348, 756]],
       start: 'Bakım kaydı açıldı, kontrollü tahliye onaya gönderildi.',
       running: 'Teknisyen onayladı. Dijital ikizde tahliye uygulanıyor.',
       result: 'Kuyu seviyesi düştü. Şamandıra incelemesi bakım kaydında açık.',
@@ -69,6 +71,8 @@ export const scenarios: Scenario[] = [
     action: 'Hidrofor için geçici basınç desteğini onaya gönder.',
     reason: 'Drenaj toparlanıyor. Üst kat basıncı düşerken diğer pompalarda müdahale gerektiren bir sapma yok.',
     execution: {
+      id: 'basinc-destegi', title: 'Hidrofor üst katlara su basıyor.',
+      camera: [789, 467, 1.06, [590, 224, 949, 719]],
       start: 'Üst kat basınç desteği için ayrı onay kaydı açıldı.',
       running: 'Teknisyen onayladı. Geçici destek dijital ikizde uygulanıyor.',
       result: 'Üst kat basıncı olağan aralığa döndü. Drenaj kaydı korundu.',
@@ -93,6 +97,8 @@ export const scenarios: Scenario[] = [
     action: 'Yerel yangın alarmını bakım bildirimlerinin önüne al.',
     reason: 'Şef ajan alarmı teknik ekibe yönlendirir. Yangın sisteminin denetimi yerel panelde kalır.',
     execution: {
+      id: 'alarm-iletimi', title: 'Yangın paneli seti çalıştırıyor.',
+      camera: [671, 597, 1.06, [442, 506, 896, 730]],
       start: 'Öncelikli alarm kaydı açıldı.',
       running: 'Örnek bildirim teknik ekibin ekranına iletiliyor.',
       result: 'Teknik ekip bildirimi aldı. Pompaların yerel kumandasına komut gönderilmedi.',
@@ -109,10 +115,13 @@ export const cues = [
   { id: 'ajanlar', start: 23 },
   { id: scenarios[0].id, start: 38, motion: true },
   { id: scenarios[0].decisionId, start: 55 },
+  { id: scenarios[0].execution.id, start: 61 },
   { id: scenarios[1].id, start: 68, motion: true },
   { id: scenarios[1].decisionId, start: 86 },
+  { id: scenarios[1].execution.id, start: 92 },
   { id: scenarios[2].id, start: 100, motion: true },
   { id: scenarios[2].decisionId, start: 122 },
+  { id: scenarios[2].execution.id, start: 130 },
   { id: 'gorunumler', start: 138 },
   { id: 'pilot', start: 164 },
 ]
