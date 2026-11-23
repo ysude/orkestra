@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
@@ -6,9 +6,11 @@ import {
   ChevronRight, Droplet, Layers3, Menu, Pause, Play,
   ShieldCheck, Target, Timer, Wrench, X,
 } from 'lucide-react'
-import { canvasAnswers, pumps, roles, team, telemetry } from './content'
+import { pumps, roles, team, telemetry } from './content'
 import type { Role } from './content'
-import { Journey, usePresentation } from './Film'
+import { Journey } from './Film'
+import { usePresentation } from './presentation'
+import { presentationSeconds, scenarios } from './story'
 import './styles.css'
 import './comic.css'
 import './film.css'
@@ -22,9 +24,13 @@ function Brand() {
   </a>
 }
 
-function Header() {
+function Header({ presentation }: { presentation: ReturnType<typeof usePresentation> }) {
   const [open, setOpen] = useState(false)
-  const presentation = usePresentation()
+
+  function closeMenu() {
+    setOpen(false)
+    presentation.pause()
+  }
 
   return <header className="site-header">
     <div className="shell header-inner">
@@ -34,15 +40,14 @@ function Header() {
         {open ? <X size={23} /> : <Menu size={23} />}
       </button>
       <nav id="navigation" className={open ? 'nav open' : 'nav'} aria-label="Ana menü">
-        <a href="#baslangic" onClick={() => { setOpen(false); presentation.pause() }}>Hikâye</a>
-        <a href="#saganak" onClick={() => { setOpen(false); presentation.pause() }}>Sağanak</a>
-        <a href="#ortak-karar" onClick={() => { setOpen(false); presentation.pause() }}>Ajanlar</a>
-        <a href="#gorunumler" onClick={() => { setOpen(false); presentation.pause() }}>Arayüzler</a>
-        <a href="#kanvas" onClick={() => { setOpen(false); presentation.pause() }}>Proje kanvası</a>
+        <a href="#baslangic" onClick={closeMenu}>Hikâye</a>
+        {scenarios.map((event) => <a key={event.id} href={'#' + event.id} onClick={closeMenu}>{event.id === 'saganak' ? 'Atık su' : event.id === 'hidrofor' ? 'Hidrofor' : 'Yangın'}</a>)}
+        <a href="#gorunumler" onClick={closeMenu}>Arayüzler</a>
+        <a href="#pilot" onClick={closeMenu}>Pilot ve ilk test</a>
       </nav>
       <button type="button" aria-pressed={presentation.playing} className="presentation-toggle" onClick={presentation.toggle}>
         {presentation.playing ? <Pause size={16} /> : <Play size={16} />}
-        {presentation.playing ? 'Duraklat' : 'Sunumu oynat'}
+        {presentation.playing ? 'Duraklat' : presentation.second === presentationSeconds ? 'Baştan oynat' : 'Sunumu oynat'}
       </button>
     </div>
   </header>
@@ -52,9 +57,9 @@ function Manager() {
   const [daily, setDaily] = useState(true)
 
   return <>
-    <div className="panel-alert"><Droplet size={21} /><div><strong>Atık su seviyesi yükseliyor</strong><span>A Blok · Bugün 18.00 · Bakım takibi</span></div></div>
+    <div className="panel-alert"><Droplet size={21} /><div><strong>Mahalle günü · Yangın alarmı öncelikli</strong><span>A Blok · 19.10 · Günün olay kaydı</span></div></div>
     <div className="panel-stats">
-      {pumps.map((pump) => <div key={pump.id}><span>{pump.name}</span><strong>{pump.reading}</strong><small>{pump.status}</small></div>)}
+      {pumps.map((pump) => <div key={pump.id}><span>{pump.name}</span><strong>{scenarios[2].readings.find(({ pump: type }) => type === pump.type)?.value}</strong><small>{pump.type === "fire" ? "Öncelikli uyarı" : "Olağan aralıkta"}</small></div>)}
     </div>
     <div className="panel-block preference">
       <div><strong>Günlük özet bildirimi</strong><span>Bildirim tercihi örneği</span></div>
@@ -77,14 +82,15 @@ function Technician() {
   </>
 }
 
-function Resident() {
+function Resident({ showAnswer }: { showAnswer: boolean }) {
   const [answer, setAnswer] = useState(false)
+  useEffect(() => { if (showAnswer) setAnswer(true) }, [showAnswer])
   return <div className="phone">
-    <div className="phone-top"><span>18.05</span><span>Orkestra</span></div>
-    <div className="phone-notification"><Bell size={16} /><div><strong>Bina bildirimi</strong><span>Sağanak nedeniyle teknik ekip kuyu durumunu inceliyor.</span></div></div>
+    <div className="phone-top"><span>19.10</span><span>Orkestra</span></div>
+    <div className="phone-notification"><Bell size={16} /><div><strong>Bina bildirimi</strong><span>Eve dönüşte görülen basınç düşüşünden sonra su basıncı olağan aralığa döndü.</span></div></div>
     <button className="question" type="button" aria-expanded={answer} aria-controls="assistant-answer"
       onClick={() => setAnswer(!answer)}>Binada su kesintisi var mı? <ChevronRight size={15} /></button>
-    <p id="assistant-answer" className="answer" hidden={!answer}>Bu örnek olayda su kesintisi görünmüyor. Hidrofor basıncı olağan aralıkta. Teknik ekip atık su kuyusunu kontrol ediyor.</p>
+    <p id="assistant-answer" className="answer" hidden={!answer}>Son ölçümde su kesintisi görünmüyor. Son hidrofor ölçümü olağan aralıkta, 3,3 bar. Daha önceki drenaj incelemesi olay geçmişinde duruyor.</p>
   </div>
 }
 
@@ -96,15 +102,23 @@ function Fleet() {
       <div><span>Açık olay</span><strong>1</strong></div>
     </div>
     <ul className="fleet">
-      <li><Building2 size={17} /><strong>A Blok</strong><span>Atık su uyarısı</span></li>
+      <li><Building2 size={17} /><strong>A Blok</strong><span>Yangın alarmı</span></li>
       <li><Building2 size={17} /><strong>B Blok</strong><span>Normal</span></li>
       <li><Building2 size={17} /><strong>C Blok</strong><span>Telemetri bekleniyor</span></li>
     </ul>
   </>
 }
 
-function RoleViews() {
+function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresentation> }) {
   const [selected, setSelected] = useState<Role>('manager')
+  const second = presentation.second
+  const playing = presentation.playing
+  const showAnswer = playing && second !== null && second >= 152 && second < 164
+
+  useEffect(() => {
+    if (!playing || second === null || second < 138 || second >= 164) return
+    setSelected(second >= 150 ? 'resident' : 'manager')
+  }, [playing, second])
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const last = roles.length - 1
@@ -123,11 +137,11 @@ function RoleViews() {
     document.getElementById('tab-' + role.id)?.focus()
   }
 
-  return <section className="section role-section" id="gorunumler" tabIndex={-1} aria-labelledby="role-title">
+  return <section className="section fixed-screen role-section" id="gorunumler" tabIndex={-1} aria-labelledby="role-title">
     <div className="shell">
       <p className="eyebrow"><span className="signal" /> Web ve mobil</p>
-      <h2 id="role-title">Aynı olay, dört kullanıcı.</h2>
-      <p className="section-lead">Herkes kendi işi için gerekli bilgiyi görür.</p>
+      <h2 id="role-title">Aynı gün, dört kullanıcı.</h2>
+      <p className="section-lead">Yönetici günün olay kaydını webde izler. Sakin, mobil bildirim ve örnek asistan yanıtıyla su hizmetinin durumunu öğrenir.</p>
       <div className="role-tabs" role="tablist" aria-label="Kullanıcı görünümleri">
         {roles.map((role, index) => {
           const Icon = roleIcons[role.id]
@@ -147,7 +161,7 @@ function RoleViews() {
             <div className="dashboard-body">
               {role.id === 'manager' && <Manager />}
               {role.id === 'technician' && <Technician />}
-              {role.id === 'resident' && <Resident />}
+              {role.id === 'resident' && <Resident showAnswer={showAnswer} />}
               {role.id === 'wilo' && <Fleet />}
             </div>
           </div>
@@ -164,7 +178,7 @@ const metrics = [
 ]
 
 function Pilot() {
-  return <section className="section pilot" id="pilot" aria-labelledby="pilot-title">
+  return <section className="section fixed-screen pilot" id="pilot" aria-labelledby="pilot-title">
     <div className="shell">
       <p className="eyebrow"><span className="signal" /> İlk Wilo pilotu</p>
       <div className="pilot-intro">
@@ -172,8 +186,11 @@ function Pilot() {
         <p className="section-lead">Orkestra, mevcut Wilo kontrol ve bağlantı altyapısına ortak bir bina görünümü ekler. Uygun mevcut bağlantısı olan tek binada ek donanımsız, salt okunur bir pilotla başlar.</p>
       </div>
       <div className="pilot-strip"><ShieldCheck size={22} /><p>Model uyumu ve veri erişimi Wilo ile doğrulanır. Yangın paneli kendi kontrolünü sürdürür.</p><a href="https://wilo.com/za/en/Solutions-Finder/Connectivity/Remote-access/">Wilo Smart Connect <ArrowRight size={16} /></a></div>
-      <h3 className="metric-heading">Pilotta neyi ölçeceğiz?</h3>
-      <p className="comparison">Aynı olay kayıtlarında sabit eşik, bağımsız ajanlar ve şef ajanlı yaklaşım karşılaştırılır.</p>
+      <div className="pilot-plan">
+        <article><h3>Veri ve saha doğrulaması</h3><p>Demoda kuyu seviyesi, hidrofor basıncı ve yangın paneli durumu temsili. Pilotta zaman damgalı ölçüm ile alarm geçmişi ve yetkili veri erişimi gerekir. Kullanılabilir veri noktaları Wilo ile model bazında doğrulanır.</p></article>
+        <article><h3>İlk test</h3><p>Sağanak, eve dönüşte basınç düşüşü ve akşam alarmı kayıtlarını aynı zaman damgalarıyla sabit eşik, bağımsız ajanlar ve şef ajanla oynatırız. Normal çalışma kayıtlarında yanlış alarmı karşılaştırırız.</p></article>
+      </div>
+      <p className="pilot-goal"><strong>Başarı ölçütü:</strong> Yanlış alarmı artırmadan daha erken uyarı. Sahada hedef, taşkın ve su kesintisi gibi plansız olayları azaltmak.</p>
       <div className="metric-grid">
         {metrics.map(({ title, detail, icon: Icon }) => <article key={title}><Icon size={24} /><h4>{title}</h4><p>{detail}</p></article>)}
       </div>
@@ -193,43 +210,17 @@ function Pilot() {
   </section>
 }
 
-function ProjectCanvas() {
-  return <section className="section project-canvas" id="kanvas" aria-labelledby="canvas-title">
-    <div className="shell">
-      <p className="eyebrow"><span className="signal" /> Water AI Hackathon</p>
-      <h2 id="canvas-title">Proje Fikri Kanvası</h2>
-      <dl className="canvas-identity">
-        <div><dt>Proje adı</dt><dd>Orkestra</dd></div>
-        <div><dt>Takım</dt><dd>Prometheus</dd></div>
-        <div><dt>Çalışma alanı</dt><dd>Binalar · Su yönetimi</dd></div>
-      </dl>
-      <div className="answers">
-        {canvasAnswers.map(({ question, answer, note }, index) => <article className="answer-card" key={question}>
-          <h3><span>{String(index + 1).padStart(2, '0')}</span>{' '}{question}</h3>
-          <p>{answer}</p>
-          {note && <p className="answer-note">{note}</p>}
-        </article>)}
-      </div>
-      <h3 className="team-title">Takım üyeleri</h3>
-      <ul className="team-list">
-        {team.map(({ name, role }) => <li key={name}><strong>{name}</strong><span>{role}</span></li>)}
-      </ul>
-    </div>
-  </section>
-}
-
 function App() {
+  const presentation = usePresentation()
   return <>
     <a className="skip-link" href="#icerik">İçeriğe geç</a>
     <main id="icerik" tabIndex={-1}>
-      <Header />
-      <Journey>
-        <RoleViews />
-        <Pilot />
-      </Journey>
-      <ProjectCanvas />
+      <Header presentation={presentation} />
+      <Journey />
+      <RoleViews presentation={presentation} />
+      <Pilot />
     </main>
-    <footer className="site-footer"><div className="shell footer-inner"><Brand /><p>Wilo için çok ajanlı pompa yönetimi konsepti</p></div></footer>
+    <footer className="site-footer"><div className="shell footer-inner"><Brand /><p>Prometheus · {team.map(({ name }) => name).join(" · ")}</p></div></footer>
   </>
 }
 

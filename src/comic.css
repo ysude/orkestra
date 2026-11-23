@@ -59,20 +59,6 @@
 .pilot-strip > svg, .metric-grid svg, .roadmap svg { color: var(--ink); }
 .pilot-strip a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
-.project-canvas { background: var(--paper); }
-.canvas-identity { display: flex; flex-wrap: wrap; gap: 10px; margin: 27px 0 22px; }
-.canvas-identity > div { flex: 1 1 180px; border: 1px solid var(--line); padding: 9px 12px; background: var(--lime); }
-.canvas-identity dd { text-align: left; font-size: 1.12rem; font-weight: 780; margin-top: 4px; }
-.answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.answer-card { border: 1px solid var(--line); background: #ffffff;  }
-.answer-card h3 { display: flex; align-items: baseline; gap: 9px; background: #eaf2ef; border-bottom: 1px solid var(--line); font-size: 1.1rem; padding: 8px 12px; }
-.answer-card h3 span { font-family: var(--mono); font-weight: 500; }
-.answer-card p { padding: 13px 12px; line-height: 1.6; }
-.answer-card .answer-note { padding-top: 0; color: #426159; font-size: .92rem; }
-.team-title { margin-top: 35px; font-size: 1.45rem; }
-.team-list { padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.team-list li { border-top: 1px solid var(--line); padding-top: 8px; }
-.team-list span { display: block; margin-top: 4px; color: var(--muted); font-size: .9rem; }
 .site-footer { background: var(--ink); color: var(--paper); }
 .site-footer p { color: #c9dad4; }
 .site-footer .brand-period { color: var(--lime); }
@@ -81,8 +67,4 @@
   .header-inner { min-height: 60px; }
   .menu-button { border: 1px solid var(--line); background: var(--lime); }
   .nav { border-bottom: 1px solid var(--line); }
-  .answers, .team-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 510px) {
-  .answers { grid-template-columns: 1fr; }
 }

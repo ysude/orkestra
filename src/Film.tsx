@@ -1,236 +1,206 @@
-import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import { ArrowDown, Droplets, Flame, Gauge, GitMerge, Waves } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { ArrowDown, Building2, Flame, Gauge, GitMerge, Waves } from 'lucide-react'
 import { pumps } from './content'
+import { drawNeighborhood, sceneHeight, sceneWidth } from './Neighborhood'
+import { scenarios } from './story'
 
-export const presentationSeconds = 180
+type Event = typeof scenarios[number]
 
+const icons = { fire: Flame, pressure: Gauge, drainage: Waves }
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
-const pumpIcons = { fire: Flame, pressure: Gauge, drainage: Waves }
 
-export function usePresentation() {
-  const [playing, setPlaying] = useState(false)
-
-  useEffect(() => {
-    if (!playing) return
-    const ending = document.getElementById('kanvas')
-    if (!ending) return
-
-    const finish = window.scrollY + ending.getBoundingClientRect().top - 76
-    const origin = window.scrollY >= finish - 4 ? 0 : window.scrollY
-    const remaining = Math.max(1, presentationSeconds * 1000 * (finish - origin) / finish)
-    const started = performance.now()
-    let frame = 0
-
-    function advance(now: number) {
-      const progress = clamp((now - started) / remaining)
-      window.scrollTo({ top: origin + (finish - origin) * progress, behavior: 'instant' })
-      if (progress < 1) frame = requestAnimationFrame(advance)
-      else setPlaying(false)
-    }
-
-    function pause() { setPlaying(false) }
-    function pauseOnPointer(event: PointerEvent) {
-      const target = event.target
-      if (target instanceof Element && target.closest('.presentation-toggle')) return
-      if (event.pointerType === 'touch' || (target instanceof Element && target.closest('a,button,summary'))) pause()
-    }
-    function pauseOnKey(event: KeyboardEvent) {
-      if (['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp', ' '].includes(event.key)) pause()
-    }
-
-    frame = requestAnimationFrame(advance)
-    window.addEventListener('wheel', pause, { passive: true })
-    window.addEventListener('pointerdown', pauseOnPointer)
-    window.addEventListener('keydown', pauseOnKey)
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('wheel', pause)
-      window.removeEventListener('pointerdown', pauseOnPointer)
-      window.removeEventListener('keydown', pauseOnKey)
-    }
-  }, [playing])
-
-  return { playing, toggle: () => setPlaying((current) => !current), pause: () => setPlaying(false) }
+function Opening() {
+  return <section className="opening" id="baslangic" aria-labelledby="opening-title">
+    <div className="opening-mark" aria-hidden="true"><span /><span /><span /></div>
+    <div className="shell opening-inner">
+      <p className="eyebrow">Water AI Hackathon</p>
+      <h1 id="opening-title">Orkestra<span>.</span></h1>
+      <p className="opening-subtitle">Bir binanın suyla geçen günü.</p>
+      <div className="opening-meta">
+        <div><span>Takım</span><strong>Prometheus</strong></div>
+        <a className="opening-link" href="#ihtiyac">Mahalleye in <ArrowDown size={18} /></a>
+      </div>
+    </div>
+  </section>
 }
 
-export function Journey({ children }: { children: ReactNode }) {
-  const journey = useRef<HTMLDivElement>(null)
-  const world = useRef<HTMLDivElement>(null)
-  const weather = useRef<HTMLCanvasElement>(null)
-  const rainScene = useRef<HTMLElement>(null)
-  const agents = useRef<HTMLElement>(null)
-  const readout = useRef<HTMLOutputElement>(null)
+function Context() {
+  return <section className="context-note incident-note layout-left" id="ihtiyac" aria-labelledby="ihtiyac-title">
+    <div className="shell">
+      <div className="motion-copy">
+        <p className="eyebrow"><Building2 size={16} /> A Blok · Günün başlangıcı</p>
+        <h2 id="ihtiyac-title">Üç pompa, üç ayrı ekran.</h2>
+        <p className="motion-story">Yangın, hidrofor ve atık su pompaları ayrı kontrolörlerle çalışıyor. Uyumlu kurulumlarda Wilo Smart Connect cihazları uzaktan görünür kılıyor. Binanın ortak durumunu bugün ekip, ayrı uyarılardan çıkarıyor.</p>
+        <p className="motion-story">Yönetici ne olduğunu, teknisyen nereden başlayacağını, sakin ise su hizmetinin etkilenip etkilenmediğini bilmek istiyor.</p>
+        <p className="context-bridge">Orkestra, her pompanın geçmişini öğrenen ajanların bulgularını şef ajanla birleştiriyor.</p>
+      </div>
+    </div>
+  </section>
+}
+
+
+function Decision({ event }: { event: Event }) {
+  const chapter = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const root = journey.current
-    const scene = world.current
-    const canvas = weather.current
-    const ctx = canvas?.getContext('2d')
-    if (!root || !scene || !canvas || !ctx) return
+    const section = chapter.current
+    if (!section) return
 
-    const context = ctx
+    const observer = new IntersectionObserver(([entry]) => {
+      section.classList.toggle('in-view', entry.isIntersecting)
+    }, { threshold: .3 })
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [])
+
+  return <section ref={chapter} className="section fixed-screen decision-screen" id={event.decisionId} aria-labelledby={event.decisionId + '-title'}>
+    <div className="shell">
+      <p className="eyebrow">{event.label} · Pompa odası · Örnek veri</p>
+      <h2 id={event.decisionId + '-title'}>Şef ajan neye dayanıyor?</h2>
+      <div className="pump-network">
+        {event.readings.map((reading) => {
+          const pump = pumps.find(({ type }) => type === reading.pump)
+          if (!pump) return null
+
+          const Icon = icons[pump.type]
+          return <article key={pump.id} className={'network-pump ' + (pump.type === event.key ? 'focus-pump' : '')}>
+            <div className="network-pump-title"><Icon size={20} /><h3>{pump.name}</h3></div>
+            <strong>{reading.value}</strong>
+            <small>{reading.baseline}</small>
+            <p>{reading.finding}</p>
+          </article>
+        })}
+      </div>
+      <div className="network-lines" aria-hidden="true">{event.readings.map(({ pump }) => <span key={pump} />)}</div>
+      <article className="conductor">
+        <div className="conductor-heading"><GitMerge size={23} /><h3>Şef ajan</h3><span>{event.priority}</span></div>
+        <strong>{event.action}</strong>
+        <p>{event.reason}</p>
+      </article>
+    </div>
+  </section>
+}
+
+function IncidentNote({ event }: { event: Event }) {
+  return <section id={event.id} className={'incident-note layout-' + event.placement}
+    aria-labelledby={event.id + '-title'}>
+    <div className="shell">
+      <div className="motion-copy">
+        <p className="eyebrow">A Blok · {event.time} · {event.label}</p>
+        <h2 id={event.id + '-title'}>{event.title}</h2>
+        <p className="motion-story">{event.story}</p>
+        <div className="motion-reading">
+          <span>{event.measure} · Örnek veri</span>
+          <strong>{event.initial} <span aria-hidden="true">→</span> {event.final}</strong>
+          <small>{event.baseline}</small>
+        </div>
+      </div>
+    </div>
+  </section>
+}
+
+function Incident() {
+  const section = useRef<HTMLDivElement>(null)
+  const stage = useRef<HTMLDivElement>(null)
+  const canvas = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const root = section.current
+    const graphic = stage.current
+    const context = canvas.current?.getContext('2d')
+    if (!root || !graphic || !context) return
+
+    const notes = scenarios.map((event) => document.getElementById(event.id))
+    const decisions = scenarios.map((event) => document.getElementById(event.decisionId))
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const width = canvas.width
-    const height = canvas.height
     let frame = 0
-    let camera = 0
-    let water = 0
-    let signals = 0
-    let inView = true
+    let visible = false
+    let lastDraw = -Infinity
 
-    function render(now: number) {
-      if (!root || !scene) return
+    function draw(time: number) {
+      if (!graphic || !context) return
+      if (time - lastDraw >= 27 || reduced.matches) {
+        const header = document.querySelector('header')?.offsetHeight ?? 0
+        const viewport = window.innerHeight - header
+        const distance = (node: HTMLElement | null) => (node?.getBoundingClientRect().top ?? 0) - header
+        const progress = notes.map((node) => {
+          const span = Math.max(viewport * .66, (node?.offsetHeight ?? viewport) - viewport * .63)
+          return ease(clamp((viewport * .24 - distance(node)) / span))
+        })
 
-      const viewport = window.innerHeight
-      const origin = root.getBoundingClientRect().top
-      const rainTop = rainScene.current?.getBoundingClientRect().top ?? viewport
-      const agentTop = agents.current?.getBoundingClientRect().top ?? viewport
-      const descent = ease(clamp((-origin + viewport * .08) / (viewport * 1.2)))
-      const rise = ease(clamp((viewport * .94 - rainTop) / (viewport * .95)))
-      const coordination = ease(clamp((viewport * .9 - agentTop) / (viewport * .56)))
+        const decisionFocus = decisions.map((node) => {
+          const top = distance(node)
+          const height = node?.offsetHeight ?? viewport
+          return ease(clamp((viewport * .58 - top) / (viewport * .50))) *
+            ease(clamp((top + height - viewport * .33) / (viewport * .57)))
+        })
+        const [rain, clear, dusk] = progress
+        let x = 0
+        let y = 0
+        let zoom = 1
+        scenarios.forEach(({ camera }, index) => {
+          const weight = progress[index]
+          x += (camera[0] - x) * weight
+          y += (camera[1] - y) * weight
+          zoom += (camera[2] - zoom) * weight
+        })
 
-      camera += (descent - camera) * .17
-      water += (rise - water) * .12
-      signals += (coordination - signals) * .16
-
-      if (reduced.matches) {
-        camera = descent
-        water = rise
-        signals = coordination
+        drawNeighborhood(context, reduced.matches
+          ? { rain: 0, clear: 0, dusk: 0, time: 0, moving: false }
+          : { rain, clear, dusk, time: time / 1000, moving: true })
+        graphic.style.setProperty('--pan-x', x + 'px')
+        graphic.style.setProperty('--pan-y', y + 'px')
+        graphic.style.setProperty('--zoom', String(zoom))
+        graphic.style.setProperty('--mobile-pan', (-12 - rain * 19 + clear * 16 - dusk * 4) + '%')
+        graphic.style.setProperty('--focus', String(Math.max(...decisionFocus)))
+        lastDraw = time
       }
-
-      scene.style.setProperty('--descent', camera.toFixed(4))
-      scene.style.setProperty('--water', water.toFixed(4))
-      scene.style.setProperty('--signals', signals.toFixed(4))
-
-      const percent = '%' + Math.round(36 + water * 42)
-      if (readout.current && readout.current.textContent !== percent) readout.current.textContent = percent
-
-      context.clearRect(0, 0, width, height)
-      context.lineCap = 'round'
-      if (!reduced.matches) {
-        const time = now * .001
-        const count = Math.floor(64 + water * 81)
-        context.lineWidth = 1
-        context.strokeStyle = 'rgba(230, 250, 254, .57)'
-        context.beginPath()
-        for (let index = 0; index < count; index++) {
-          const x = (index * 137.47 + 19) % width
-          const y = (index * 47.39 + time * (275 + index % 9 * 28)) % 536
-          context.moveTo(x, y)
-          context.lineTo(x - 3, Math.min(536, y + 12 + index % 14))
-        }
-        context.stroke()
-
-        if (signals > .01) {
-          const sources = [607, 878, 1177]
-          const target = 1250
-          context.strokeStyle = 'rgba(132, 255, 224,' + signals * .7 + ')'
-          context.lineWidth = 2
-          for (const source of sources) {
-            context.beginPath()
-            context.moveTo(source, 714)
-            context.lineTo(source, 639)
-            context.lineTo(target, 639)
-            context.stroke()
-
-            const distance = 75 + target - source
-            const offset = source * .009
-            for (let dot = 0; dot < 3; dot++) {
-              const position = (time * 103 + offset + dot * distance / 3) % distance
-              const x = source + Math.max(0, position - 75)
-              const y = 714 - Math.min(position, 75)
-              context.beginPath()
-              context.arc(x, y, 4, 0, Math.PI * 2)
-              context.fillStyle = 'rgba(196,255,239,' + signals + ')'
-              context.fill()
-            }
-          }
-        }
-      }
-      if (inView && !reduced.matches) frame = requestAnimationFrame(render)
+      if (visible && !reduced.matches) frame = requestAnimationFrame(draw)
     }
 
     function refresh() {
       cancelAnimationFrame(frame)
-      if (inView) frame = requestAnimationFrame(render)
+      if (visible) frame = requestAnimationFrame(draw)
     }
 
     const observer = new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting
+      visible = entry.isIntersecting
       refresh()
     })
     observer.observe(root)
     window.addEventListener('scroll', refresh, { passive: true })
     window.addEventListener('resize', refresh)
     reduced.addEventListener('change', refresh)
-    refresh()
+    frame = requestAnimationFrame(draw)
 
     return () => {
-      cancelAnimationFrame(frame)
       observer.disconnect()
+      cancelAnimationFrame(frame)
       window.removeEventListener('scroll', refresh)
       window.removeEventListener('resize', refresh)
       reduced.removeEventListener('change', refresh)
     }
   }, [])
 
-  return <div className="journey" ref={journey} id="baslangic">
-    <div className="environment" aria-hidden="true">
-      <div className="world" ref={world}>
-        <img src="/orkestra-kesit.jpg" alt="" fetchPriority="high" width="1536" height="1024" />
-        <div className="well-water" />
-        <canvas width={1536} height={1024} ref={weather} />
-        <span className="world-label label-fire">Yangın</span>
-        <span className="world-label label-pressure">Hidrofor</span>
-        <span className="world-label label-drainage">Atık su</span>
-        <span className="world-label label-coordinator">Şef ajan</span>
-      </div>
+  return <div className="incident" ref={section} aria-label="A Blok · Aynı mahallede bir gün">
+    <div className="incident-stage" ref={stage} role="img"
+      aria-label="Sokak, komşu binalar, park, araçlar ve A Blok’un üç pompalı bodrumunu gösteren mahalle kesiti">
+      <div className="incident-plate"><canvas ref={canvas} width={sceneWidth} height={sceneHeight} aria-hidden="true" /></div>
     </div>
-    <div className="journey-content">
-      <section className="journey-chapter introduction" aria-labelledby="introduction-title">
-        <div className="shell">
-          <p className="eyebrow">Water AI Hackathon · Prometheus</p>
-          <h1 id="introduction-title">Orkestra</h1>
-          <div className="opening-note">
-            <h2>Yağmur başladığında bodrumda ne oluyor?</h2>
-            <p>Yangın, hidrofor ve atık su pompaları ayrı çalışıyor. Orkestra, her birinin ölçümünü birleştirerek binanın su durumunu ortaya çıkarıyor.</p>
-            <a className="journey-link" href="#saganak">Bodruma in <ArrowDown size={16} /></a>
-          </div>
-        </div>
-      </section>
-      <section className="journey-chapter story-chapter" id="saganak" ref={rainScene} aria-labelledby="weather-title">
-        <div className="shell">
-          <article className="story-note">
-            <p className="eyebrow"><Droplets size={16} /> A Blok · Sağanak · Örnek olay</p>
-            <h2 id="weather-title">Yağmur suyu kuyuda birikiyor.</h2>
-            <p>Yağmur hızlanıyor. Bodrumdaki atık su kuyusu dolmaya başlıyor. Orkestra, seviyeyi bu binanın geçmişinde aynı saatlerde görülen %35–50 aralığıyla karşılaştırıyor.</p>
-            <div className="story-readout"><span>Kuyu seviyesi</span><output ref={readout} aria-live="off">%36</output></div>
-            <p>Kuyu %78’e ulaştığında atık su ajanı sapmayı şef ajana bildiriyor. Binanın diğer iki sisteminin durumu da aynı anda değerlendiriliyor.</p>
-          </article>
-        </div>
-      </section>
-      <section className="journey-chapter story-chapter agent-chapter" id="ortak-karar" ref={agents} aria-labelledby="agent-title">
-        <div className="shell">
-          <article className="story-note">
-            <p className="eyebrow"><GitMerge size={16} /> Dijital ikiz · Örnek olay</p>
-            <h2 id="agent-title">Üç pompa, tek değerlendirme.</h2>
-            <p>Pompa ajanları kendi ölçümlerini ve geçmişlerini takip ediyor. Şef ajan, ayrı bulguların aynı bina için ne anlama geldiğini birleştiriyor.</p>
-            <ul className="agent-evidence">
-              {pumps.map((pump) => {
-                const Icon = pumpIcons[pump.type]
-                return <li key={pump.id} className={pump.type}>
-                  <Icon size={18} /><div><strong>{pump.name} · {pump.reading}</strong><p>{pump.observation}</p></div>
-                </li>
-              })}
-            </ul>
-            <div className="story-result"><strong>Teknisyene öneri</strong><p>Kuyuyu ve şamandırayı kontrol edin. Örnek olayda hidrofor basıncı olağan aralıkta, yangın paneli hazır.</p></div>
-          </article>
-        </div>
-      </section>
-      {children}
+    <div className="incident-story">
+      <Context />
+      {scenarios.map((event) => <div key={event.id}>
+        <IncidentNote event={event} />
+        <Decision event={event} />
+      </div>)}
     </div>
   </div>
+}
+
+export function Journey() {
+  return <>
+    <Opening />
+    <Incident />
+  </>
 }
