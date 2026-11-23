@@ -91,7 +91,11 @@
   pointer-events: none;
   background: #e7f0eb;
 }
-.incident-viewfinder { overflow: clip; position: relative; background: #a8bfb5; }
+.incident-viewfinder {
+  overflow: clip;
+  position: relative;
+  background: linear-gradient(#bedbd6, #e0ebdf 53%, #adc4b9 54%, #a1b9ae);
+}
 .incident-viewfinder::after {
   content: "";
   position: absolute;
@@ -114,13 +118,14 @@
 .static-caption { display: none; }
 .scene-captions {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  padding-block: clamp(13px, 2.4svh, 28px);
+  padding: clamp(13px, 2.4svh, 28px) clamp(18px, 4vw, 52px);
   background: #f1f7f2;
   border-top: 1px solid #b7d1c6;
   opacity: calc(1 - var(--focus));
 }
-.scene-caption { grid-area: 1 / 1; width: min(1240px, calc(100% - 104px)); margin-inline: auto; visibility: hidden; opacity: 0; }
+.scene-caption { grid-area: 1 / 1; width: 100%; max-width: 1240px; min-width: 0; margin-inline: auto; visibility: hidden; opacity: 0; }
 .scene-caption.is-current { opacity: 1; visibility: visible; }
 .motion-copy {
   display: grid;
@@ -210,7 +215,6 @@
   .incident-note { min-height: 152svh; scroll-margin-top: 60px; }
   .context-note { min-height: calc(100svh - 60px); }
   .scene-captions { padding-block: 11px; }
-  .scene-caption { width: calc(100% - 36px); }
   .motion-copy, .motion-copy.layout-right { grid-template-columns: 1fr; gap: 7px; }
   .motion-copy.layout-right > :first-child { order: initial; }
   .motion-copy h2 { font-size: clamp(1.4rem, 6.2vw, 2.15rem); }
@@ -226,6 +230,12 @@
   .network-lines { height: 27px; }
   .network-lines::before { top: 12px; }
   .network-lines span { height: 13px; }
+}
+@media (min-width: 768px) and (max-height: 570px) {
+  .scene-captions { padding-block: 9px; }
+  .motion-copy h2 { font-size: clamp(1.4rem, 2.4vw, 1.95rem); }
+  .motion-story { font-size: .92rem; }
+  .motion-reading { gap: 3px 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .incident { display: block; background: #eaf3ee; }

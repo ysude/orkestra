@@ -10,14 +10,25 @@ type Event = typeof scenarios[number]
 const icons = { fire: Flame, pressure: Gauge, drainage: Waves }
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
-const overview: CameraPoint = [780, 425, 1.03]
+const overview: CameraPoint = [880, 447, 1.03, [523, 117, 1281, 768]]
 
 function interpolateCamera(from: CameraPoint, to: CameraPoint, weight: number): CameraPoint {
+  const mix = (start: number, end: number) => start + (end - start) * weight
   return [
-    from[0] + (to[0] - from[0]) * weight,
-    from[1] + (to[1] - from[1]) * weight,
-    from[2] + (to[2] - from[2]) * weight,
+    mix(from[0], to[0]), mix(from[1], to[1]), mix(from[2], to[2]),
+    [
+      mix(from[3][0], to[3][0]), mix(from[3][1], to[3][1]),
+      mix(from[3][2], to[3][2]), mix(from[3][3], to[3][3]),
+    ],
   ]
+}
+
+function frameAxis(center: number, start: number, end: number, viewport: number, canvas: number, scale: number, inset: number) {
+  if (canvas * scale <= viewport) return (viewport - canvas * scale) / 2
+
+  const min = Math.max(viewport - canvas * scale, inset - start * scale)
+  const max = Math.min(0, viewport - inset - end * scale)
+  return Math.max(min, Math.min(max, viewport / 2 - center * scale))
 }
 
 function Opening() {
@@ -160,12 +171,17 @@ function Incident() {
           const pan = ease(clamp((beat - .20) / .73))
           camera = interpolateCamera(camera, interpolateCamera(from, to, pan), entry)
         })
-        const [x, y, zoom] = camera
+        const [x, y, zoom, [left, top, right, bottom]] = camera
         const width = view.clientWidth
         const height = view.clientHeight
-        const scale = Math.max(width / sceneWidth, height / sceneHeight) * zoom
-        const translateX = Math.min(0, Math.max(width - sceneWidth * scale, width / 2 - x * scale))
-        const translateY = Math.min(0, Math.max(height - sceneHeight * scale, height / 2 - y * scale))
+        const inset = Math.min(14, width * .025, height * .04)
+        const scale = Math.min(
+          Math.max(width / sceneWidth, height / sceneHeight) * zoom,
+          (width - 2 * inset) / (right - left),
+          (height - 2 * inset) / (bottom - top),
+        )
+        const translateX = frameAxis(x, left, right, width, sceneWidth, scale, inset)
+        const translateY = frameAxis(y, top, bottom, height, sceneHeight, scale, inset)
         drawing.style.transform = reduced.matches ? '' : 'translate3d(' + translateX + 'px,' + translateY + 'px,0) scale(' + scale + ')'
 
         const nextCaption = notes.findLastIndex((node) => distance(node) <= viewport * .38) + 1
