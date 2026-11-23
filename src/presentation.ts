@@ -15,7 +15,7 @@ function measure() {
 }
 
 export function usePresentation() {
-  const checkpoint = useRef({ time: 0, scroll: 0 })
+  const checkpoint = useRef({ time: 0, scroll: 0, transitioning: false })
   const [playing, setPlaying] = useState(false)
   const [second, setSecond] = useState<number | null>(null)
 
@@ -33,7 +33,8 @@ export function usePresentation() {
     const manualTime = cue.start + (motionPosition.travel > 0
       ? clamp((scroll - motionPosition.start) / motionPosition.travel) * (next - cue.start - 2)
       : 0)
-    const resume = Math.abs(prior.scroll - scroll) < 8 ? prior.time : manualTime
+    const resumesCheckpoint = Math.abs(prior.scroll - scroll) < 8
+    const resume = resumesCheckpoint ? prior.time : manualTime
     const initial = resume >= presentationSeconds ? 0 : resume
     const started = performance.now()
     const wallStarted = Date.now()
@@ -48,13 +49,14 @@ export function usePresentation() {
       const previous = positions[index - 1]
       const since = time - active.start
       const duration = (cues[index + 1]?.start ?? presentationSeconds) - active.start
-      const isFreshJump = since < 1.75 && previous && initial <= active.start
-      const goal = isFreshJump && !reduced.matches
+      const transitioning = since < 1.75 && previous && !reduced.matches &&
+        (initial < active.start || (resumesCheckpoint && prior.transitioning))
+      const goal = transitioning
         ? previous.start + previous.travel + (location.start - previous.start - previous.travel) * ease(clamp(since / 1.75))
         : location.start + (reduced.matches ? 0 : location.travel * ease(clamp((since - 1.75) / Math.max(1, duration - 3.75))))
       if (Math.abs(window.scrollY - goal) >= 1) window.scrollTo({ top: goal, behavior: 'instant' })
 
-      checkpoint.current = { time, scroll: window.scrollY }
+      checkpoint.current = { time, scroll: window.scrollY, transitioning: Boolean(transitioning) }
       const whole = Math.floor(time)
       setSecond((previousSecond) => previousSecond === whole ? previousSecond : whole)
 
@@ -75,12 +77,18 @@ export function usePresentation() {
     }
     function resize() { positions = measure() }
 
+    const layout = new ResizeObserver(resize)
+    for (const { id } of cues) {
+      const section = document.getElementById(id)
+      if (section) layout.observe(section)
+    }
     frame = requestAnimationFrame(advance)
     window.addEventListener('wheel', pause, { passive: true })
     window.addEventListener('pointerdown', pauseOnPointer)
     window.addEventListener('keydown', pauseOnKey)
     window.addEventListener('resize', resize)
     return () => {
+      layout.disconnect()
       cancelAnimationFrame(frame)
       window.removeEventListener('wheel', pause)
       window.removeEventListener('pointerdown', pauseOnPointer)

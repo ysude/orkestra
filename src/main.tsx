@@ -3,14 +3,16 @@ import type { KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Activity, ArrowRight, AudioLines, Bell, Building2, Check,
-  ChevronRight, Droplet, Layers3, Menu, Pause, Play,
+  ChevronRight, Database, Droplet, FlaskConical, Layers3, Menu, Pause, Play,
   ShieldCheck, Target, Timer, Wrench, X,
 } from 'lucide-react'
 import { pumps, roles, team, telemetry } from './content'
 import type { Role } from './content'
 import { Journey } from './Film'
+import { JuryCard } from './JuryCard'
+import { DecisionLogic } from './JuryEvidence'
 import { usePresentation } from './presentation'
-import { presentationSeconds, scenarios } from './story'
+import { pilotStart, presentationSeconds, roleViewsStart, scenarios } from './story'
 import './styles.css'
 import './comic.css'
 import './film.css'
@@ -114,11 +116,11 @@ function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresen
   const [selected, setSelected] = useState<Role>('manager')
   const second = presentation.second
   const playing = presentation.playing
-  const showAnswer = playing && second !== null && second >= 152 && second < 164
+  const showAnswer = playing && second !== null && second >= roleViewsStart + 9 && second < pilotStart
 
   useEffect(() => {
-    if (!playing || second === null || second < 138 || second >= 164) return
-    setSelected(second >= 150 ? 'resident' : 'manager')
+    if (!playing || second === null || second < roleViewsStart || second >= pilotStart) return
+    setSelected(second >= roleViewsStart + 7 ? 'resident' : 'manager')
   }, [playing, second])
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -138,11 +140,18 @@ function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresen
     document.getElementById('tab-' + role.id)?.focus()
   }
 
-  return <section className="section fixed-screen role-section" id="gorunumler" tabIndex={-1} aria-labelledby="role-title">
-    <div className="shell">
+  return <section className="section fixed-screen closing-beat role-section" id="gorunumler" tabIndex={-1} aria-labelledby="role-title">
+    <div className="shell story-panel">
       <p className="eyebrow"><span className="signal" /> Web ve mobil</p>
       <h2 id="role-title">Aynı gün, dört kullanıcı.</h2>
-      <p className="section-lead">Yönetici günün olay kaydını webde izler. Sakin, mobil bildirim ve örnek asistan yanıtıyla su hizmetinin durumunu öğrenir.</p>
+      <div className="jury-grid">
+        <JuryCard title="Hedef kullanıcı ve ihtiyaç">
+          <p><strong>Site yöneticisi</strong> şikâyet geldiğinde hangi sistemin etkilendiğini anlamak ister. <strong>Teknisyen</strong> üç paneli dolaşmadan sahaya neyle gideceğini ve nereden başlayacağını bilmek ister.</p>
+        </JuryCard>
+        <JuryCard title="Çözüm önerisi">
+          <p>Orkestra mevcut kontrolörlerden okur ve önerileri önce dijital ikizde dener. Yönetici olay anında gerekçeyi değerlendirir, teknisyen sahaya gitmeden kontrol listesini açar. Sakin soru sorar, Wilo örnek filo görünümünü izler.</p>
+        </JuryCard>
+      </div>
       <div className="role-tabs" role="tablist" aria-label="Kullanıcı görünümleri">
         {roles.map((role, index) => {
           const Icon = roleIcons[role.id]
@@ -175,25 +184,53 @@ function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresen
 const metrics = [
   { title: 'Erken uyarı süresi', detail: 'Uyarı ile doğrulanan olay arasındaki dakika.', icon: Timer },
   { title: 'Yanlış alarm sayısı', detail: 'Kontrolde sorun bulunmayan uyarılar.', icon: Target },
-  { title: 'Plansız pompa olayları', detail: 'Bina başına aylık plansız olay sayısı.', icon: Activity },
+  { title: 'Yangın rezervi ihlali', detail: 'Simülasyon kabul koşulu, her senaryoda sıfır ihlal.', icon: ShieldCheck },
 ]
 
 function Pilot() {
-  return <section className="section fixed-screen pilot" id="pilot" aria-labelledby="pilot-title">
-    <div className="shell">
+  return <section className="section fixed-screen closing-beat static-beat pilot" id="pilot" aria-labelledby="pilot-title">
+    <div className="shell story-panel">
       <p className="eyebrow"><span className="signal" /> İlk Wilo pilotu</p>
       <div className="pilot-intro">
         <h2 id="pilot-title">Bir binada başla.<br />Şehre kadar ölçekle.</h2>
-        <p className="section-lead">Orkestra, mevcut Wilo kontrol ve bağlantı altyapısına ortak bir bina görünümü ekler. Uygun mevcut bağlantısı olan tek binada ek donanımsız, salt okunur bir pilotla başlar.</p>
+        <p className="section-lead">Pilot, uyumlu bir Wilo kurulumunda salt okunur veriyle ve ek donanım olmadan başlar. Ekip önerileri gölge modda değerlendirir.</p>
       </div>
-      <div className="pilot-strip"><ShieldCheck size={22} /><p>Model uyumu ve veri erişimi Wilo ile doğrulanır. Yangın paneli kendi kontrolünü sürdürür.</p><a href="https://wilo.com/za/en/Solutions-Finder/Connectivity/Remote-access/">Wilo Smart Connect <ArrowRight size={16} /></a></div>
-      <div className="pilot-plan">
-        <article><h3>Veri ve saha doğrulaması</h3><p>Demoda kuyu seviyesi, hidrofor basıncı ve yangın paneli durumu temsili. Pilotta zaman damgalı ölçüm ile alarm geçmişi ve yetkili veri erişimi gerekir. Kullanılabilir veri noktaları Wilo ile model bazında doğrulanır.</p></article>
-        <article><h3>İlk test</h3><p>Sağanak, eve dönüşte basınç düşüşü ve akşam alarmı kayıtlarını aynı zaman damgalarıyla sabit eşik, bağımsız ajanlar ve şef ajanla oynatırız. Normal çalışma kayıtlarında yanlış alarmı karşılaştırırız.</p></article>
+      <div className="jury-grid pilot-evidence">
+        <JuryCard title="Veri ve uygulanabilirlik" icon={<Database size={18} />}>
+          <dl className="pilot-data">
+            <div><dt>Elimizde</dt><dd>Dijital ikiz demosu ve temsili kayıtlar.</dd></div>
+            <div><dt>Aday kaynaklar</dt><dd>Hava, kesinti duyuruları ve üretici kılavuzları.</dd></div>
+            <div><dt>Wilo ile doğrulanacak</dt><dd>Anonim saha geçmişi, basınç ve devir, yangın paneli ve jokey durumu, kuyu sinyalleri. Veri çıkışları ve salt okunur erişim izni.</dd></div>
+          </dl>
+        </JuryCard>
+        <JuryCard title="İlk test" id="ilk-test" icon={<FlaskConical size={18} />}>
+          <p>Varsayımımız, ölçümlerin erken uyarıya yetmesi ve ortak kararın plansız olayları azaltması.</p>
+          <div className="pilot-trials">
+            <strong>30 senaryo · Eğitim dışında</strong>
+            <ul aria-label="Test senaryolarının dağılımı">
+              <li><strong>10</strong> Arıza</li>
+              <li><strong>10</strong> Dış olay</li>
+              <li><strong>10</strong> Normal gün</li>
+            </ul>
+          </div>
+          <p>Tek sanal binada aynı kayıtları <strong>sabit eşik, bağımsız ajanlar ve Şef ajan</strong> ile oynatacağız.</p>
+          <p>Erken uyarıyı, yanlış alarmları ve Şef’in plansız olaylara etkisini ölçeceğiz. Bildirimin doğru aksiyona yönlendirip yönlendirmediğini üç yönetici veya teknisyenle sınayacağız.</p>
+        </JuryCard>
+        <JuryCard title="Beklenen su etkisi" id="su-etkisi" icon={<Droplet size={18} />}>
+          <div className="pilot-impact">
+            <div><span>Ana gösterge</span><p><strong>Bina başına aylık plansız pompa olayı</strong></p></div>
+            <div>
+              <ul aria-label="Sayılacak olay örnekleri">
+                <li>Hizmeti etkileyen basınç düşüşü</li><li>Su baskını</li><li>Plansız arıza</li><li>Kaçırılan yangın testi</li>
+              </ul>
+              <p>Bu olayları azaltmayı hedefliyoruz. Kazanım ilk testten sonra raporlanacak.</p>
+            </div>
+          </div>
+        </JuryCard>
       </div>
-      <p className="pilot-goal"><strong>Başarı ölçütü:</strong> Yanlış alarmı artırmadan daha erken uyarı. Sahada hedef, taşkın ve su kesintisi gibi plansız olayları azaltmak.</p>
+      <div className="pilot-strip"><ShieldCheck size={22} /><p>Uyumlu modeller Wilo ile doğrulanacak. Yangın paneli kendi kontrolünü sürdürür.</p><a href="https://wilo.com/za/en/Solutions-Finder/Connectivity/Remote-access/">Wilo Smart Connect <ArrowRight size={16} /></a></div>
       <div className="metric-grid">
-        {metrics.map(({ title, detail, icon: Icon }) => <article key={title}><Icon size={24} /><h4>{title}</h4><p>{detail}</p></article>)}
+        {metrics.map(({ title, detail, icon: Icon }) => <article key={title}><Icon size={24} /><h3>{title}</h3><p>{detail}</p></article>)}
       </div>
       <details className="roadmap">
         <summary><span><Layers3 size={20} /> Ürün mimarisi ve yol haritası</span><ChevronRight size={18} /></summary>
@@ -217,9 +254,11 @@ function App() {
     <a className="skip-link" href="#icerik">İçeriğe geç</a>
     <main id="icerik" tabIndex={-1}>
       <Header presentation={presentation} />
-      <Journey playing={presentation.playing} />
-      <RoleViews presentation={presentation} />
-      <Pilot />
+      <Journey playing={presentation.playing}>
+        <DecisionLogic />
+        <RoleViews presentation={presentation} />
+        <Pilot />
+      </Journey>
     </main>
     <footer className="site-footer"><div className="shell footer-inner"><Brand /><p>Prometheus · {team.map(({ name }) => name).join(" · ")}</p></div></footer>
   </>

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { ArrowDown, Building2, Diamond, Flame, Gauge, GitMerge, RotateCcw, Waves } from 'lucide-react'
 import { pumps } from './content'
+import { BuildingCase } from './JuryEvidence'
 import { drawNeighborhood, sceneHeight, sceneOffsetX, sceneWidth } from './Neighborhood'
 import type { Neighborhood } from './Neighborhood'
-import { scenarios } from './story'
+import { cues, scenarios } from './story'
 import type { CameraPoint } from './story'
 
 type Event = typeof scenarios[number]
@@ -14,12 +15,16 @@ const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
 const overview: CameraPoint = [838, 447, 1, [440, 117, 1281, 768]]
 const introductionCamera: CameraPoint = [869, 523, 1, [440, 231, 1297, 758]]
+const closingCameras: Partial<Record<string, CameraPoint>> = {
+  gorunumler: [810, 440, .95, [475, 183, 1270, 755]],
+  pilot: [1065, 421, .92, [520, 183, 1535, 756]],
+}
 const sceneResolution = .9
 const actionDuration = 4200
 const agentRoles = {
   fire: { title: 'Yangın ajanı', text: 'Hazırlık ve alarm durumunu salt okunur izler. Yerel yangın paneli kendi kontrolünü sürdürür.' },
   pressure: { title: 'Hidrofor ajanı', text: 'Üst kat basıncını binanın geçmişiyle karşılaştırır ve ihtiyaç varsa basınç desteği önerir.' },
-  drainage: { title: 'Atık su ajanı', text: 'Kuyu seviyesini izler, olağan aralığın dışına çıkınca drenaj incelemesi önerir.' },
+  drainage: { title: 'Atık su ajanı', text: 'Benzer yağışlarda kuyunun olağan seviyesini geçmişten öğrenir, sapmayı bildirir.' },
 }
 
 function interpolateCamera(from: CameraPoint, to: CameraPoint, weight: number): CameraPoint {
@@ -68,10 +73,7 @@ function Context() {
       <p className="eyebrow"><Building2 size={16} /> A Blok · Günün başlangıcı</p>
       <h2>Üç pompa, üç ayrı ekran.</h2>
     </div>
-    <div className="scene-explanation">
-      <p className="motion-story">Yangın, hidrofor ve atık su pompaları ayrı kontrolörlerle çalışıyor. Uyumlu kurulumlarda Wilo Smart Connect cihazları uzaktan görünür kılıyor. Binanın ortak durumunu ekip, ayrı uyarılardan çıkarıyor.</p>
-      <p className="motion-story">Yönetici durumu, teknisyen sorunun kaynağını, sakin su hizmetinin etkilenip etkilenmediğini bilmek istiyor. Orkestra bu bulguları şef ajanla birleştiriyor.</p>
-    </div>
+    <p className="motion-story">Pompa dairesindeki üç sistem kendi durumunu bildiriyor. Aynı gün içinde sağanak, basınç düşüşü ve yangın alarmı geldiğinde bina ekibinin hangi işe önce bakacağını birlikte izleyelim.</p>
   </div>
 }
 
@@ -104,7 +106,7 @@ function StillScene({ event }: { event?: Event }) {
 }
 
 function AgentIntroduction() {
-  return <section className="illustrated-beat agent-introduction" id="ajanlar" aria-labelledby="agents-title">
+  return <section className="illustrated-beat agent-introduction" id="ajanlar" aria-labelledby="agents-title" data-caption-side="left">
     <StillScene />
     <div className="story-panel illustrated-card intro-card">
       <p className="eyebrow">A Blok · Pompa odası</p>
@@ -128,7 +130,7 @@ function ActionScene({ event, phase, replay }: { event: Event; phase: number; re
   const steps = [execution.start, execution.running, execution.result]
   const side = event.key === 'drainage' ? 'left' : 'right'
 
-  return <section className={'illustrated-beat action-scene action-' + side} id={execution.id} aria-labelledby={execution.id + '-title'} data-phase={phase}>
+  return <section className={'illustrated-beat action-scene action-' + side} id={execution.id} aria-labelledby={execution.id + '-title'} data-caption-side={side} data-phase={phase}>
     <StillScene event={event} />
     <div className="story-panel illustrated-card action-card motion-copy">
       <div>
@@ -206,7 +208,7 @@ function IncidentNote({ event }: { event: Event }) {
   </div>
 }
 
-function Incident({ playing }: { playing: boolean }) {
+function Incident({ playing, children }: { playing: boolean; children: ReactNode }) {
   const section = useRef<HTMLDivElement>(null)
   const stage = useRef<HTMLDivElement>(null)
   const viewfinder = useRef<HTMLDivElement>(null)
@@ -231,17 +233,22 @@ function Incident({ playing }: { playing: boolean }) {
 
     const notes = scenarios.map((event) => document.getElementById(event.id))
     const intro = document.getElementById('ajanlar')
-    const decisions = scenarios.map((event) => document.getElementById(event.decisionId))
     const actions = scenarios.map((event) => document.getElementById(event.execution.id))
-    const beats = [
-      { node: document.getElementById('ihtiyac'), panel: captionRail.children[0], side: 'left' },
-      { node: intro, panel: intro?.querySelector('.story-panel'), side: 'left' },
-      ...scenarios.flatMap((event, index) => [
-        { node: notes[index], panel: captionRail.children[index + 1], side: event.placement },
-        { node: decisions[index], panel: decisions[index]?.querySelector('.story-panel'), side: null },
-        { node: actions[index], panel: actions[index]?.querySelector('.story-panel'), side: event.key === 'drainage' ? 'left' : 'right' },
-      ]),
-    ]
+    const captionsById = new Map([
+      ['ihtiyac', { panel: captionRail.children[0], side: 'left' }],
+      ...scenarios.map((event, index) => [event.id, { panel: captionRail.children[index + 1], side: event.placement }] as const),
+    ] as const)
+    const beats = cues.slice(1).map(({ id }) => {
+      const node = document.getElementById(id)
+      const floating = captionsById.get(id)
+      return {
+        node,
+        panel: floating?.panel ?? node?.querySelector('.story-panel'),
+        side: floating?.side ?? node?.dataset.captionSide ?? null,
+        closingCamera: closingCameras[id],
+        still: node?.classList.contains('static-beat') ?? false,
+      }
+    })
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
     const stacked = window.matchMedia('(max-width: 767px)')
     let frame = 0
@@ -255,6 +262,8 @@ function Incident({ playing }: { playing: boolean }) {
     let phase = 0
     let elapsed = 0
     let timedAction = false
+    let drawingAction: Neighborhood['action']
+    let weatherState: [number, number, number] | undefined
 
     function draw(time: number) {
       frame = 0
@@ -283,19 +292,19 @@ function Incident({ playing }: { playing: boolean }) {
           if (!(panel instanceof HTMLElement)) return
           const showing = !reduced.matches && index === displayedBeat && panelOpacity > .001
           panel.style.setProperty('--panel-opacity', showing ? String(ease(panelOpacity)) : '0')
+          panel.style.setProperty('--panel-offset', showing ? (1 - ease(panelOpacity)) * 16 + 'px' : '16px')
           panel.toggleAttribute('data-visible', showing)
           panel.inert = !reduced.matches && !showing
         })
 
         const subject = beats[desiredBeat]?.node
         const shown = beats[displayedBeat]
-        const focus = shown?.side === null ? ease(panelOpacity) : 0
+        const focus = shown?.side === null ? ease(panelOpacity) * (shown.closingCamera && !shown.still ? .94 : 1) : 0
         const progress = notes.map((node) => {
           const span = Math.max(viewport * .66, (node?.offsetHeight ?? viewport) - viewport * .63)
           return ease(clamp((viewport * .24 - distance(node)) / span))
         })
 
-        const [rain, clear, dusk] = progress
         const introducing = subject === intro
         const actionCamera = actions.findIndex((node) => node === subject)
         const nextAction = actions.findIndex((node) => node === shown?.node && distance(node) <= viewport * .13)
@@ -326,7 +335,9 @@ function Incident({ playing }: { playing: boolean }) {
           const pan = ease(clamp((beat - .20) / .73))
           camera = interpolateCamera(camera, interpolateCamera(from, to, pan), entry)
         })
-        if (introducing) camera = introductionCamera
+        const closingCamera = beats[desiredBeat]?.closingCamera
+        if (closingCamera) camera = closingCamera
+        else if (introducing) camera = introductionCamera
         else if (actionCamera >= 0) camera = scenarios[actionCamera].execution.camera
         const [x, y, zoom, [left, top, right, bottom]] = camera
         if (reduced.matches) {
@@ -351,7 +362,7 @@ function Incident({ playing }: { playing: boolean }) {
           )
           const translateX = frameAxis(x + sceneOffsetX, left + sceneOffsetX, right + sceneOffsetX, safeLeft, safeRight, width, sceneWidth, scale, inset)
           const translateY = frameAxis(y, top, bottom, 0, safeBottom, height, sceneHeight, scale, inset)
-          const blend = 1 - Math.exp(-Math.max(0, delta) / 170)
+          const blend = 1 - Math.exp(-Math.max(0, delta) / 220)
           rendered = rendered
             ? [
               rendered[0] + (translateX - rendered[0]) * blend,
@@ -362,14 +373,35 @@ function Incident({ playing }: { playing: boolean }) {
           drawing.style.transform = 'translate3d(' + rendered[0] + 'px,' + rendered[1] + 'px,0) scale(' + rendered[2] + ')'
         }
 
-        const state: Neighborhood = { rain, clear, dusk, time: time / 1000, moving: true }
-        if (event) [state.rain, state.clear, state.dusk] = sceneWeather(nextAction)
+        const visualAction = scenarios[actionCamera]
+        const fadeStep = Math.min(55, Math.max(0, delta))
+        if (!drawingAction && visualAction) {
+          drawingAction = { key: visualAction.key, progress: 0, reveal: 0, time: 0 }
+        }
+        if (drawingAction) {
+          if (drawingAction.key === visualAction?.key) {
+            drawingAction.reveal = clamp((drawingAction.reveal ?? 0) + fadeStep / 760)
+            drawingAction.progress = actionIndex === actionCamera ? actionProgress : 0
+            drawingAction.time = actionIndex === actionCamera ? elapsed / 1000 : 0
+          } else {
+            drawingAction.reveal = clamp((drawingAction.reveal ?? 0) - fadeStep / 590)
+            if (drawingAction.reveal === 0) drawingAction = undefined
+          }
+        }
+        const weatherBlend = 1 - Math.exp(-Math.max(0, delta) / 165)
+        weatherState = [
+          (weatherState?.[0] ?? progress[0]) * (1 - weatherBlend) + progress[0] * weatherBlend,
+          (weatherState?.[1] ?? progress[1]) * (1 - weatherBlend) + progress[1] * weatherBlend,
+          (weatherState?.[2] ?? progress[2]) * (1 - weatherBlend) + progress[2] * weatherBlend,
+        ]
+        const [rain, clear, dusk] = weatherState
+        const state: Neighborhood = { rain, clear, dusk, time: time / 1000, moving: focus < .999 || !shown?.still }
         const afterDrainage = actions[0] && distance(actions[0]) < -actions[0].offsetHeight * .25
-        state.drained = Boolean(afterDrainage && nextAction !== 0)
+        state.drained = Boolean(afterDrainage)
         const afterSupport = actions[1] && distance(actions[1]) < -actions[1].offsetHeight * .25
-        state.supported = Boolean(afterSupport && nextAction !== 1)
+        state.supported = Boolean(afterSupport)
         state.introduce = shown?.node === intro ? ease(panelOpacity) : 0
-        state.action = event && { key: event.key, progress: actionProgress, time: elapsed / 1000 }
+        state.action = drawingAction
         drawNeighborhood(context, reduced.matches
           ? { rain: 0, clear: 0, dusk: 0, time: 0, moving: false }
           : state)
@@ -421,6 +453,7 @@ function Incident({ playing }: { playing: boolean }) {
       <section className="incident-note context-note" id="ihtiyac" aria-label="Günün başlangıcı">
         <div className="static-caption shell"><Context /></div>
       </section>
+      <BuildingCase />
       <AgentIntroduction />
       {scenarios.map((event, index) => <div key={event.id}>
         <section className="incident-note" id={event.id} aria-label={event.title}>
@@ -433,13 +466,14 @@ function Incident({ playing }: { playing: boolean }) {
             document.getElementById(event.execution.id)?.scrollIntoView({ block: 'start', behavior: 'instant' })
           }} />
       </div>)}
+      {children}
     </div>
   </div>
 }
 
-export function Journey({ playing }: { playing: boolean }) {
+export function Journey({ playing, children }: { playing: boolean; children: ReactNode }) {
   return <>
     <Opening />
-    <Incident playing={playing} />
+    <Incident playing={playing}>{children}</Incident>
   </>
 }

@@ -30,7 +30,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'saganak', decisionId: 'ortak-karar', key: 'drainage', label: 'Sağanak', time: '16.20',
     title: 'Yağmur bodruma kadar ulaşıyor.',
-    story: 'Sokak boşalırken su drenaj kuyusunda birikiyor. Atık su ajanı, seviyenin bu binada benzer saatlerde görülen aralığı geçtiğini fark ediyor.',
+    story: 'Sağanak bodrumdaki drenaj kuyusunu dolduruyor. Atık su ajanı, taşma yaşanmadan seviyenin benzer yağışlarda görülen aralığı aştığını fark ediyor.',
     measure: 'Kuyu seviyesi', initial: '%36', final: '%78', baseline: 'Olağan aralık %35–50',
     placement: 'left', camera: [
       [1045, 405, 1.02, [964, 240, 1220, 549]],
@@ -43,7 +43,7 @@ export const scenarios: Scenario[] = [
     ],
     priority: 'Drenaj incelemesi',
     action: 'Drenaj kaydı aç ve kontrollü tahliye iste.',
-    reason: 'Kuyu seviyesi yüksek. Hidrofor ve yangın sistemlerinde eşzamanlı sapma yok.',
+    reason: 'Kuyu seviyesi %78’e çıktı. Hidrofor ve yangın paneli olağan durumda.',
     execution: {
       id: 'tahliye', title: 'Atık su pompası kuyuyu boşaltıyor.',
       camera: [1174, 604, 1.06, [963, 493, 1348, 756]],
@@ -108,11 +108,14 @@ export const scenarios: Scenario[] = [
 ]
 
 export const presentationSeconds = 195
+export const roleViewsStart = 149
+export const pilotStart = 164
 
 export const cues = [
   { id: 'baslangic', start: 0 },
   { id: 'ihtiyac', start: 13 },
-  { id: 'ajanlar', start: 23 },
+  { id: 'bina-sorunu', start: 21, motion: true },
+  { id: 'ajanlar', start: 31 },
   { id: scenarios[0].id, start: 38, motion: true },
   { id: scenarios[0].decisionId, start: 55 },
   { id: scenarios[0].execution.id, start: 61 },
@@ -122,6 +125,7 @@ export const cues = [
   { id: scenarios[2].id, start: 100, motion: true },
   { id: scenarios[2].decisionId, start: 122 },
   { id: scenarios[2].execution.id, start: 130 },
-  { id: 'gorunumler', start: 138 },
-  { id: 'pilot', start: 164 },
+  { id: 'yapay-zeka', start: 138, motion: true },
+  { id: 'gorunumler', start: roleViewsStart, motion: true },
+  { id: 'pilot', start: pilotStart, motion: true },
 ]

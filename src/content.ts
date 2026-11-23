@@ -28,8 +28,8 @@ export const pumps: Pump[] = [
 ]
 
 export const roles = [
-  { id: 'manager', name: 'Yönetici', heading: 'Binanın durumu tek bakışta.', description: 'Olayın önceliğini, hangi sistemlerin etkilendiğini ve hangi bildirimlerin açık olduğunu görün.' },
-  { id: 'technician', name: 'Teknisyen', heading: 'Ölçümden kontrol listesine.', description: 'Alarmı başlatan değişimi geçmiş ölçümlerle karşılaştırın ve saha kontrolü için bir başlangıç noktası alın.' },
+  { id: 'manager', name: 'Yönetici', heading: 'Binanın durumu tek bakışta.', description: 'Uyarı geldiğinde web panelinden önceliği belirleyin ve saha kontrolünü teknik ekiple planlayın.' },
+  { id: 'technician', name: 'Teknisyen', heading: 'Ölçümden kontrol listesine.', description: 'Bildirimdeki ölçüm geçmişini açın ve ilk saha kontrolünü kuyu ile şamandıraya yöneltin.' },
   { id: 'resident', name: 'Sakin', heading: 'Su durumunu cebinden öğren.', description: 'Binayı ilgilendiren bir bildirim alın ve tesisat ayrıntılarına girmeden su durumunu sorun.' },
   { id: 'wilo', name: 'Wilo', heading: 'Filoda nereye bakmalı?', description: 'Birden çok binadaki olayları ve veri bağlantısı durumunu tek filo görünümünde inceleyin.' },
 ] as const

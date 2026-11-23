@@ -116,7 +116,7 @@ dd { margin: 0; text-align: right; }
 .comparison { margin-top: 8px; color: var(--muted); line-height: 1.55; }
 .metric-grid { margin-top: 14px; }
 .metric-grid article { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 18px; }
-.metric-grid h4 { margin-block: 9px 5px; }
+.metric-grid h3 { margin-block: 9px 5px; font-size: 1rem; }
 .metric-grid p { color: var(--muted); line-height: 1.5; }
 .roadmap { border: 1px solid var(--line); border-radius: 10px; margin-top: 16px; }
 .roadmap summary, .roadmap summary span { display: flex; align-items: center; gap: 10px; }

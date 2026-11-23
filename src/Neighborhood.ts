@@ -13,7 +13,12 @@ export type Neighborhood = {
   introduce?: number
   drained?: boolean
   supported?: boolean
-  action?: { key: 'drainage' | 'pressure' | 'fire'; progress: number; time?: number }
+  action?: { key: 'drainage' | 'pressure' | 'fire'; progress: number; reveal?: number; time?: number }
+}
+
+function smooth(value: number) {
+  const step = Math.min(1, Math.max(0, value))
+  return step * step * (3 - 2 * step)
 }
 
 function mix(first: string, second: string, factor: number) {
@@ -33,14 +38,21 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   const weather = rain * (1 - clear)
   const progress = action?.progress ?? 0
   const travel = Math.min(1, Math.max(0, (progress - .22) / .78))
-  const applied = travel * travel * (3 - 2 * travel)
+  const applied = smooth(travel)
+  const reveal = action ? action.reveal ?? 1 : 0
+  const visibility = smooth(reveal)
+  const diagnostic = 1 - smooth(reveal / .42)
+  const readingVisibility = smooth((reveal - .42) / .58)
+  const flowVisibility = visibility * smooth(travel * 5)
   const drainage = action?.key === 'drainage'
   const pressure = action?.key === 'pressure'
   const fire = action?.key === 'fire'
-  const localFireRunning = fire && progress > .08
-  const level = 36 + 42 * rain - 17 * (drainage ? applied : drained ? 1 : clear) - 17 * dusk
+  const fireFlow = fire ? visibility * smooth((progress - .08) / .18) : 0
+  const baseLevel = 36 + 42 * rain - 17 * (drained ? 1 : clear) - 17 * dusk
+  const level = drainage ? baseLevel + (78 - 17 * applied - baseLevel) * visibility : baseLevel
   const actionTime = action?.time ?? time
-  const bar = pressure ? 2.6 + .7 * applied : supported ? 3.3 : 3.4 - clear * (1 - dusk) * .8 - dusk * .1
+  const baseBar = supported ? 3.3 : 3.4 - clear * (1 - dusk) * .8 - dusk * .1
+  const bar = pressure ? baseBar + (2.6 + .7 * applied - baseBar) * visibility : baseBar
   const sky = mix('9dc8cc', '263e58', dusk * .85)
   const horizon = mix('edf1dc', 'e6b487', dusk * .65)
 
@@ -208,19 +220,23 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     path(points.map(([x, y]) => [x - width * .18, y - width * .18]), '#f6ffed6c', Math.max(1, width * .19))
   }
 
-  function pointOnPipe(points: number[][], fraction: number) {
+  function positionOnPipe(points: number[][], fraction: number) {
     const segments = points.slice(1).map(([x, y], index) =>
       Math.hypot(x - points[index][0], y - points[index][1]))
     let distance = fraction * segments.reduce((sum, length) => sum + length, 0)
     for (const [index, length] of segments.entries()) {
-      if (distance <= length) {
+      if (length && distance <= length) {
         const [x, y] = points[index]
         const [endX, endY] = points[index + 1]
-        return [x + (endX - x) * distance / length, y + (endY - y) * distance / length]
+        return { index, point: [x + (endX - x) * distance / length, y + (endY - y) * distance / length] }
       }
       distance -= length
     }
-    return points[points.length - 1]
+    return { index: points.length - 2, point: points[points.length - 1] }
+  }
+
+  function pointOnPipe(points: number[][], fraction: number) {
+    return positionOnPipe(points, fraction).point
   }
 
   function flow(points: number[][], color: string) {
@@ -265,7 +281,7 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     path([[x + 5,y + 38],[x + width - 5,y + 38]], '#819991', 1)
   }
 
-  function verticalPump(x: number, floor: number, color: string, size = 1, running = false) {
+  function verticalPump(x: number, floor: number, color: string, size = 1, running = 0) {
     ctx.save()
     ctx.translate(x, floor)
     ctx.scale(size, size)
@@ -275,8 +291,9 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     for (const y of [-47,-39,-31,-23]) rect(-11,y,22,2,'#d6e3d7', '#789b92')
     rect(-14, -15, 28, 12, color, '#3c645f')
     rect(-16, -3, 32, 3, '#546f68')
-    rect(-11, -64, 22, 4, running ? '#c2efb1' : '#345c5c')
+    rect(-11, -64, 22, 4, mix('345c5c', 'c2efb1', running))
     if (running) {
+      ctx.globalAlpha = running
       const offset = moving ? (actionTime * 40) % 19 : 8
       path([[-8,-61 + offset],[8,-61 + offset]], '#e6f7ca', 2)
     }
@@ -555,10 +572,12 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   disc(714, 663, 17, '#52776e')
   disc(714, 663, 13, fireColor)
   disc(714, 663, 5, paper)
-  if (localFireRunning) {
+  if (fireFlow) {
+    ctx.globalAlpha = fireFlow
     const angle = (moving ? actionTime : .3) * 11
     path([[714 - Math.cos(angle) * 9,663 - Math.sin(angle) * 9],
       [714 + Math.cos(angle) * 9,663 + Math.sin(angle) * 9]], '#fff0dc', 2.6)
+    ctx.globalAlpha = 1
   }
   rect(713, 676, 18, 5, '#6f9086')
   cabinet(580, 620, 34, '#b98d7d', dusk > .43)
@@ -568,7 +587,7 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   pipe([[793,674],[923,674]], 6, boosterColor)
   for (const x of [810, 853, 896]) {
     pipe([[x,628],[x,611],[916,611]], 4.2, boosterColor)
-    verticalPump(x, 680, boosterColor, .79, pressure && travel > 0 && x === 853)
+    verticalPump(x, 680, boosterColor, .79, pressure && x === 853 ? flowVisibility : 0)
   }
   cabinet(916, 623, 29, '#9fbabc')
   label('Hidrofor', 863, 719)
@@ -576,15 +595,15 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   rect(987, 681, 122, 11, '#d1dcd0', '#6f8f81')
   for (const x of [1010, 1064]) {
     pipe([[x,639],[x,613],[1105,613],[1105,580]], 5, drainColor)
-    verticalPump(x, 680, drainColor, .70, drainage && travel > 0 && x === 1064)
+    verticalPump(x, 680, drainColor, .70, drainage && x === 1064 ? flowVisibility : 0)
   }
   cabinet(1086, 628, 30, '#a8bfad')
   label('Atık su', 1046, 719)
 
   const activeFlow = [
-    { x: 622, y: 586, intensity: action ? 0 : dusk },
-    { x: 853, y: 614, intensity: action ? 0 : clear * (1 - dusk) },
-    { x: 1134, y: 584, intensity: action ? 0 : weather },
+    { x: 622, y: 586, intensity: dusk * (1 - visibility) },
+    { x: 853, y: 614, intensity: clear * (1 - dusk) * (1 - visibility) },
+    { x: 1134, y: 584, intensity: weather * (1 - visibility) },
   ]
   for (const { x, y, intensity } of activeFlow) {
     if (intensity < .09) continue
@@ -620,16 +639,17 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
       const x = 1166 + Math.min(26, Math.max(0, travel - 16))
       disc(x, 511 + travel * .92, 2.55, '#cff5e4')
     }
-    if (!drainage) {
+    if (!drainage || diagnostic > 0) {
+      if (drainage) ctx.globalAlpha *= diagnostic
       path([[1189,waterY],[1210,waterY],[1210,625],[1217,625]], '#2b7d71', 2)
       sceneTag('Drenaj kuyusu', '%' + Math.round(level), 1217, 602, 111, '#126755')
     }
     ctx.globalAlpha = 1
   }
 
-  if (clear > .04 && dusk < .95 && !pressure) {
+  if (clear > .04 && dusk < .95 && (!pressure || diagnostic > 0)) {
     const pressureDrop = Math.max(0, (3.4 - bar) / .8)
-    ctx.globalAlpha = Math.min(1, clear * 1.9) * (1 - dusk * .9)
+    ctx.globalAlpha = Math.min(1, clear * 1.9) * (1 - dusk * .9) * (pressure ? diagnostic : 1)
     rect(566, 236, 212, 104, '#f3f7ee', '#688e83')
     rect(583, 283, 177, 10, '#d4e9de')
     path([[583,293],[760,293]], '#7da696', 1.2)
@@ -647,9 +667,12 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
       disc(967 + lift * .31, 291 - lift, 8 + lift * .094, 'rgba(83,94,97,.34)')
     }
     rect(967,275,29,4,'#b46244')
-    if (!fire) {
+    if (!fire || diagnostic > 0) {
+      ctx.save()
+      if (fire) ctx.globalAlpha *= diagnostic
       path([[594,641],[615,641],[615,612],[630,612]], '#a95d46', 2)
       sceneTag('Yangın paneli', 'Alarm', 630, 587, 115, '#93513b')
+      ctx.restore()
     }
     path([[982,263],[1006,263],[1018,246]], '#a95d46', 2)
     sceneTag('A Blok', 'Duman', 1018, 216, 102, '#93513b')
@@ -678,39 +701,57 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     ctx.globalAlpha = 1
   }
 
-  if (drainage) {
+  if (drainage && visibility > 0) {
     const suction = [[1169,723],[1169,692],[1064,692],[1064,672]]
     const outlet = [[1064,639],[1064,613],[1105,613],[1105,579],[1134,579],[1134,523],[1299,523]]
+    ctx.globalAlpha = visibility
     pipe(suction, 6, '#719f89')
     pipe(outlet, 7, '#719f89')
-    if (travel > 0) {
+    if (flowVisibility) {
+      ctx.globalAlpha = flowVisibility
       flow(suction, '#278c70')
       flow(outlet, '#278c70')
     }
+    ctx.globalAlpha = readingVisibility
     path([[1190,waterY],[1211,waterY],[1211,626],[1220,626]], '#126755', 2)
     sceneTag('Kuyu seviyesi', '%' + Math.round(level), 1220, 602, 116, '#126755')
     label('Tahliye hattı', 1240, 517)
+    ctx.globalAlpha = visibility
     assignment('drainage', 'Tahliyeyi uygula', [1180,550], [990,548],
       [[1180,565],[1146,565],[1146,564],[1118,564]])
   }
 
-  if (pressure) {
+  if (pressure && visibility > 0) {
     const riser = [[853,628],[853,611],[921,611],[921,582],[903,582],[903,260],[774,260]]
-    pipe(riser, 6, '#567e91')
+    const { index, point } = positionOnPipe(riser, smooth(Math.min(1, reveal / .85)))
+    const visibleRiser = [...riser.slice(0, index + 1), point]
+    ctx.globalAlpha = visibility
+    pipe(visibleRiser, 6, '#567e91')
     for (const y of [309, 356]) {
-      pipe([[903,y],[863,y]], 4, '#567e91')
+      const branch = smooth((y - point[1]) / 35)
+      if (branch > 0) pipe([[903,y],[903 - 40 * branch,y]], 4, '#567e91')
     }
-    if (travel > 0) flow(riser, '#217da5')
+    if (flowVisibility) {
+      ctx.globalAlpha = flowVisibility
+      flow(visibleRiser, '#217da5')
+    }
+    ctx.globalAlpha = visibility * smooth((535 - point[1]) / 40)
     gauge(903, 535, -2.45 + (bar - 2.6) * 2.45)
+    ctx.globalAlpha = readingVisibility
     sceneTag('Üst kat basıncı', bar.toFixed(1).replace('.', ',') + ' bar', 615, 236, 155, '#215d77')
     label('Üst kat hattı', 825, 248, '#215d77')
+    ctx.globalAlpha = visibility
     assignment('pressure', 'Desteği uygula', [640,521], [779,553],
       [[704,553],[704,569],[779,569]])
   }
 
-  if (fire) {
+  if (fire && visibility > 0) {
     const supply = [[523,696],[563,696],[563,678],[636,678],[636,663],[714,663],[714,657],[689,657],[689,620],[622,620],[622,581],[574,581]]
-    if (localFireRunning) flow(supply, '#ad523b')
+    if (fireFlow) {
+      ctx.globalAlpha = fireFlow
+      flow(supply, '#ad523b')
+    }
+    ctx.globalAlpha = visibility
     const alarmReading = [[594,638],[558,638],[558,571],[578,571]]
     agentLink(alarmReading, .85, '#963f35')
     const notification = [[706,578],[741,578],[741,566],[839,566]]
@@ -718,6 +759,7 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     assignment('fire', 'Alarmı ilet', [729,510], [578,555],
       [[729,525],[717,525],[717,560],[706,560]])
     label('Yerel panel', 591, 689, '#923d33')
+    ctx.globalAlpha = readingVisibility
     sceneTag('Teknik ekip', progress >= 1 ? 'Teslim edildi' : travel > 0 ? 'İletiliyor' : 'Sırada', 733, 594, 149, '#1a6755')
     rect(839, 546, 30, 42, '#1e6556', '#164a42')
     rect(843, 551, 22, 28, '#e3f5e6')
