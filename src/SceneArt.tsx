@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import type { Scene } from './content'
+import type { RefObject } from 'react'
 
-type Illustration = 'hero' | Scene
+type Illustration = 'hero' | 'room' | 'storm' | 'coordination'
 
 const ink = '#202019'
 const paper = '#fff2d7'
@@ -10,11 +10,10 @@ const blue = '#7ee8f4'
 const pink = '#fa8fb7'
 const orange = '#ff794b'
 
-function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number) {
+function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number, progress: number) {
   const width = 840
   const height = 620
   const pulse = (Math.sin(time * 2.6) + 1) * .5
-  const colors = { hero: pink, room: '#ffae73', storm: '#8ae2ef', coordination: '#cfb9ff' }
 
   function polygon(points: number[][], fill: string, stroke = ink, line = 4) {
     ctx.beginPath()
@@ -155,6 +154,11 @@ function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number)
         [420 + Math.cos(angle) * (distance + 52), 300 + Math.sin(angle) * (distance + 52)]], ink, ray % 2 ? 3 : 5)
     }
     dots(95, 94, 655, 450, '#e96a9c')
+    for (let drop = 0; drop < 30; drop++) {
+      const x = 19 + drop * 109 % 795
+      const y = (drop * 53 + time * (43 + drop % 4 * 13)) % 650
+      path([[x + 13, y - 23], [x, y]], '#d8d0ff9c', 3)
+    }
     ctx.save()
     ctx.translate(0, floating)
     apartment(160, 83)
@@ -196,7 +200,7 @@ function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number)
     polygon([[81, 119], [166, 63], [417, 63], [471, 119], [471, 480], [409, 545], [81, 545]], ink)
     rectangle(81, 119, 328, 426, paper)
     polygon([[409, 119], [471, 119], [471, 480], [409, 545]], '#259db6')
-    const level = 247 - pulse * 10
+    const level = 347 - progress * 104 - pulse * 5
     const waves = Array.from({ length: 27 }, (_, index) => {
       const x = 102 + index * 11
       return [x, level + 9 * Math.sin(index * .58 - time * 4)]
@@ -210,7 +214,7 @@ function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number)
       circle(120 + (bubble * 53 % 215), y, 4 + bubble % 5, '#b7f5ff', 0)
     }
     burst(638, 202, 119, 97, lime, -.08)
-    text('%78', 638, 196, 64)
+    text('%' + Math.round(48 + progress * 30), 638, 196, 64)
     text('KUYU SEVİYESİ', 638, 239, 19)
     rectangle(514, 359, 244, 122, paper)
     path([[535, 455], [738, 455]], ink, 2)
@@ -225,12 +229,12 @@ function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number)
     const fills = [orange, blue, lime]
     points.forEach(([x, y], index) => {
       const route = [[x + 52, y], [280 + index * 27, y], [280 + index * 27, 308], [382, 308]]
-      pipes(route, fills[index])
+      pipes(route, fills[index], progress >= .15 + index * .18)
       circle(x, y, 53, fills[index])
       text(['Y', 'H', 'A'][index], x, y, 41)
       text(names[index], x, y + 74, 19)
     })
-    pipes([[483, 308], [636, 308]], pink)
+    pipes([[483, 308], [636, 308]], pink, progress >= .7)
     burst(431, 308, 105 + pulse * 3, 84, paper, -.08)
     text('ŞEF', 431, 301, 48)
     text('AJAN', 431, 343, 24)
@@ -242,13 +246,19 @@ function paint(ctx: CanvasRenderingContext2D, scene: Illustration, time: number)
 
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
-  ctx.fillStyle = colors[scene]
-  ctx.fillRect(0, 0, width, height)
+  ctx.clearRect(0, 0, width, height)
   const draw = { hero, room, storm, coordination }
   draw[scene]()
 }
 
-export function SceneArt({ scene }: { scene: Illustration }) {
+type ArtProps = {
+  scene: Illustration
+  scrollPosition?: RefObject<number>
+  shotIndex?: number
+  playing?: boolean
+}
+
+export function SceneArt({ scene, scrollPosition, shotIndex = 0, playing = true }: ArtProps) {
   const canvas = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -260,8 +270,11 @@ export function SceneArt({ scene }: { scene: Illustration }) {
     let frame = 0
     let visible = true
     const render = (time: number) => {
-      paint(ctx, scene, reduced.matches ? 0 : time / 1000)
-      if (visible && !reduced.matches) frame = requestAnimationFrame(render)
+      const sceneProgress = scrollPosition && !reduced.matches
+        ? Math.max(0, Math.min(1, (scrollPosition.current - shotIndex + .67) / .66))
+        : 1
+      paint(ctx, scene, reduced.matches ? 0 : time / 1000, sceneProgress)
+      if (visible && playing && !reduced.matches) frame = requestAnimationFrame(render)
     }
 
     function update() {
@@ -283,7 +296,7 @@ export function SceneArt({ scene }: { scene: Illustration }) {
       observer.disconnect()
       reduced.removeEventListener('change', update)
     }
-  }, [scene])
+  }, [scene, scrollPosition, shotIndex, playing])
 
   return <canvas className="illustration" ref={canvas} width={840} height={620} aria-hidden="true" />
 }

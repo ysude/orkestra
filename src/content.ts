@@ -1,5 +1,3 @@
-export type Scene = 'room' | 'storm' | 'coordination'
-
 export type Pump = {
   id: string
   name: string
@@ -26,21 +24,6 @@ export const pumps: Pump[] = [
     id: 'A-01', name: 'Atık su', type: 'drainage', signal: 'Kuyu seviyesi',
     baseline: '%35–50', observation: 'Seviye benzer saatlerdeki olağan aralığın üzerine çıktı.',
     reading: '%78', status: 'Yükseliyor',
-  },
-]
-
-export const scenes: { id: Scene; label: string; title: string; description: string }[] = [
-  {
-    id: 'room', label: 'Pompa odası', title: 'Üç sistem, üç görev.',
-    description: 'Yangın seti hazır bekler. Hidrofor basıncı korur. Atık su pompası kuyuyu boşaltır. Her ajan kendi sisteminin ölçümlerini ve geçmişini takip eder.',
-  },
-  {
-    id: 'storm', label: 'Sağanak', title: 'Kuyuda olağandışı artış.',
-    description: 'Sağanakta kuyu seviyesi %78’e çıkar. Atık su ajanı, bu değeri binanın geçmişindeki olağan %35–50 aralığıyla karşılaştırır ve sapmayı işaretler.',
-  },
-  {
-    id: 'coordination', label: 'Ortak değerlendirme', title: 'Ayrı sinyaller, tek olay.',
-    description: 'Şef ajan yükselen kuyu seviyesini, olağan hidrofor basıncını ve hazır yangın panelini birlikte değerlendirir. Teknisyene kuyu ve şamandıra kontrolü önerir.',
   },
 ]
 

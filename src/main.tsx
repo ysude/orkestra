@@ -1,16 +1,17 @@
-import { StrictMode, useEffect, useRef, useState } from 'react'
+import { StrictMode, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
-  Activity, ArrowDown, ArrowRight, AudioLines, Bell, Building2, Check,
-  ChevronRight, Droplet, Flame, Gauge, GitMerge, Layers3, Menu, Radio,
+  Activity, ArrowRight, AudioLines, Bell, Building2, Check,
+  ChevronRight, Droplet, Flame, Gauge, Layers3, Menu,
   ShieldCheck, Target, Timer, Waves, Wrench, X,
 } from 'lucide-react'
-import { canvasAnswers, pumps, roles, scenes, team, telemetry } from './content'
-import type { Role, Scene } from './content'
-import { SceneArt } from './SceneArt'
+import { canvasAnswers, pumps, roles, team, telemetry } from './content'
+import type { Role } from './content'
+import { Film } from './Film'
 import './styles.css'
 import './comic.css'
+import './film.css'
 
 const icons = { fire: Flame, pressure: Gauge, drainage: Waves }
 const roleIcons = { manager: Building2, technician: Wrench, resident: Bell, wilo: Layers3 }
@@ -33,7 +34,7 @@ function Header() {
         {open ? <X size={23} /> : <Menu size={23} />}
       </button>
       <nav id="navigation" className={open ? 'nav open' : 'nav'} aria-label="Ana menü">
-        <a href="#senaryo" onClick={() => setOpen(false)}>Senaryo</a>
+        <a href="#baslangic" onClick={() => setOpen(false)}>Hikâye</a>
         <a href="#gorunumler" onClick={() => setOpen(false)}>Arayüzler</a>
         <a href="#kanvas" onClick={() => setOpen(false)}>Proje kanvası</a>
       </nav>
@@ -42,89 +43,11 @@ function Header() {
   </header>
 }
 
-function Hero() {
-  return <section className="hero" aria-labelledby="hero-title">
-    <div className="shell hero-grid">
-      <div className="hero-copy">
-        <p className="eyebrow"><span className="signal" /> Binalar için akıllı pompa yönetimi</p>
-        <h1 id="hero-title"><span>Her pompa</span><span>ayrı.</span><em>Karar ortak.</em></h1>
-        <p className="hero-description">Yangın, hidrofor ve atık su sistemleri farklı işler yapar. Orkestra, üçünün verisini bir araya getirip binanın su durumunu gösterir.</p>
-        <div className="hero-actions">
-          <a className="button primary" href="#senaryo">Bodruma in <ArrowDown size={18} /></a>
-          <a className="text-link" href="#gorunumler">Hikâyeyi geç <ChevronRight size={17} /></a>
-        </div>
-      </div>
-      <figure className="hero-figure">
-        <SceneArt scene="hero" />
-        <figcaption><span><Building2 size={16} /> Apartman ve pompa odası</span><span>Dijital ikiz konsepti</span></figcaption>
-      </figure>
-    </div>
-  </section>
-}
-
-function Scenario() {
-  const [active, setActive] = useState<Scene>('room')
-  const stepRefs = useRef<(HTMLElement | null)[]>([])
-
-  useEffect(() => {
-    let frame = 0
-
-    function readScene() {
-      const readingLine = Math.min(260, window.innerHeight * .34)
-      const current = stepRefs.current.findLastIndex(
-        (element) => element && element.getBoundingClientRect().top <= readingLine,
-      )
-      setActive(scenes[Math.max(0, current)].id)
-    }
-
-    function onScroll() {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(readScene)
-    }
-
-    readScene()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-      cancelAnimationFrame(frame)
-    }
-  }, [])
-
-  return <section className="section story" aria-labelledby="story-title">
+function PumpReadings() {
+  return <section className="section readings-section" id="olcumler" aria-labelledby="readings-title">
     <div className="shell">
-      <p className="eyebrow" id="senaryo"><span className="signal" /> Sağanak senaryosu</p>
-      <h2 id="story-title">Bodrumda ne oluyor?</h2>
-      <p className="section-lead">Bir sağanak başladığında üç ajan kendi sistemini izler. Şef ajan, bulguları bina ölçeğinde birleştirir.</p>
-      <div className="story-layout">
-        <div className="scene-display" data-active={active}>
-          <div className="scene-top"><span><Radio size={16} /> A Blok · Pompa odası</span><span className="example">Örnek veri</span></div>
-          <div className="scene-art" key={active}><SceneArt scene={active} /></div>
-          <nav className="scene-nav" aria-label="Senaryo sahneleri">
-            {scenes.map((scene) => <a key={scene.id} href={'#sahne-' + scene.id}
-              aria-current={active === scene.id ? 'step' : undefined}>{scene.label}</a>)}
-          </nav>
-          <div className="scene-sensors" aria-hidden="true">
-            {pumps.map((pump) => {
-              const Icon = icons[pump.type]
-              return <span className={'sensor ' + pump.type} key={pump.id}>
-                <Icon size={18} /><span>{pump.name}</span>
-              </span>
-            })}
-          </div>
-          <div className="scene-footer"><GitMerge size={17} /> Şef ajan<span>{active === 'coordination' ? 'Kontrol önerisi hazır' : 'Veriler izleniyor'}</span></div>
-        </div>
-        <div className="story-steps">
-          {scenes.map((scene, index) => <article className="story-step" id={'sahne-' + scene.id} data-scene={scene.id}
-            ref={(element) => { stepRefs.current[index] = element }} key={scene.id}>
-            <div className="mobile-scene"><SceneArt scene={scene.id} /></div>
-            <p className="eyebrow">{scene.label}</p>
-            <h3>{scene.title}</h3>
-            <p>{scene.description}</p>
-          </article>)}
-        </div>
-      </div>
+      <p className="eyebrow"><span className="signal" /> Sağanak · Örnek veri</p>
+      <h2 id="readings-title">Ajanlar ne görüyor?</h2>
       <div className="pump-grid" aria-label="Örnek pompa ölçümleri">
         {pumps.map((pump) => {
           const Icon = icons[pump.type]
@@ -317,12 +240,11 @@ function ProjectCanvas() {
 function App() {
   return <>
     <a className="skip-link" href="#icerik">İçeriğe geç</a>
-    <div id="baslangic" />
-    <Header />
     <main id="icerik" tabIndex={-1}>
-      <Hero />
-      <Scenario />
+      <Film />
+      <Header />
       <RoleViews />
+      <PumpReadings />
       <Pilot />
       <ProjectCanvas />
     </main>
