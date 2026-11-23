@@ -85,15 +85,14 @@
   align-self: start;
   top: 68px;
   height: calc(100svh - 68px);
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
   overflow: clip;
   pointer-events: none;
   background: #e7f0eb;
 }
 .incident-viewfinder {
+  position: absolute;
+  inset: 0;
   overflow: clip;
-  position: relative;
   background: linear-gradient(#bedbd6, #e0ebdf 53%, #adc4b9 54%, #a1b9ae);
 }
 .incident-viewfinder::after {
@@ -117,27 +116,32 @@
 .context-note { min-height: calc(100svh - 68px); }
 .static-caption { display: none; }
 .scene-captions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  padding: clamp(13px, 2.4svh, 28px) clamp(18px, 4vw, 52px);
-  background: #f1f7f2;
-  border-top: 1px solid #b7d1c6;
+  position: absolute;
+  inset: 0;
   opacity: calc(1 - var(--focus));
 }
-.scene-caption { grid-area: 1 / 1; width: 100%; max-width: 1240px; min-width: 0; margin-inline: auto; visibility: hidden; opacity: 0; }
-.scene-caption.is-current { opacity: 1; visibility: visible; }
+.scene-caption {
+  position: absolute;
+  width: min(34%, 355px);
+  padding: clamp(12px, 1.55vw, 23px);
+  border: 1px solid #bcd2c8;
+  border-radius: 8px;
+  background: #f6faf5f5;
+  box-shadow: 0 9px 28px #163f3638;
+  visibility: hidden;
+  opacity: 0;
+}
+.scene-caption.is-current { opacity: 1; visibility: visible; transition: opacity .2s ease .16s; }
+.caption-overview, .caption-left { left: clamp(22px, 5vw, 74px); top: 50%; transform: translateY(-50%); }
+.caption-right { right: clamp(22px, 5vw, 74px); top: 25%; }
+.caption-bottom { right: clamp(22px, 5vw, 74px); bottom: clamp(28px, 9svh, 82px); }
 .motion-copy {
   display: grid;
-  grid-template-columns: minmax(0, .76fr) minmax(0, 1.24fr);
-  align-items: center;
-  gap: clamp(15px, 3vw, 46px);
+  gap: 11px;
 }
-.motion-copy.layout-right { grid-template-columns: minmax(0, 1.24fr) minmax(0, .76fr); }
-.motion-copy.layout-right > :first-child { order: 2; }
 .scene-explanation { display: grid; gap: 6px; }
 .motion-copy .eyebrow { color: var(--green); gap: 7px; }
-.motion-copy h2 { margin-top: 6px; font-size: clamp(1.75rem, 2.85vw, 2.65rem); line-height: .99; letter-spacing: -.052em; }
+.motion-copy h2 { margin-top: 6px; font-size: clamp(1.5rem, 2.4vw, 2.2rem); line-height: 1.05; letter-spacing: -.052em; }
 .motion-story { line-height: 1.45; color: var(--muted); }
 .motion-reading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; width: fit-content; margin-top: 3px; padding: 6px 9px; border-left: 3px solid #388d7d; background: #e5f0e9; }
 .motion-reading > span, .motion-reading small { color: var(--muted); font-size: .83rem; }
@@ -214,9 +218,16 @@
   .incident-stage { top: 60px; height: calc(100svh - 60px); }
   .incident-note { min-height: 152svh; scroll-margin-top: 60px; }
   .context-note { min-height: calc(100svh - 60px); }
-  .scene-captions { padding-block: 11px; }
-  .motion-copy, .motion-copy.layout-right { grid-template-columns: 1fr; gap: 7px; }
-  .motion-copy.layout-right > :first-child { order: initial; }
+  .scene-caption {
+    top: auto;
+    right: auto;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: 50%;
+    width: min(calc(100% - 34px), 470px);
+    transform: translateX(-50%);
+    padding: 12px;
+  }
+  .motion-copy { gap: 7px; }
   .motion-copy h2 { font-size: clamp(1.4rem, 6.2vw, 2.15rem); }
   .motion-story { font-size: .88rem; }
   .motion-reading { margin-top: 0; gap: 2px 8px; }
@@ -232,7 +243,8 @@
   .network-lines span { height: 13px; }
 }
 @media (min-width: 768px) and (max-height: 570px) {
-  .scene-captions { padding-block: 9px; }
+  .scene-caption { padding: 10px 13px; }
+  .caption-right, .caption-bottom { top: 50%; bottom: auto; transform: translateY(-50%); }
   .motion-copy h2 { font-size: clamp(1.4rem, 2.4vw, 1.95rem); }
   .motion-story { font-size: .92rem; }
   .motion-reading { gap: 3px 8px; }
@@ -240,7 +252,7 @@
 @media (prefers-reduced-motion: reduce) {
   .incident { display: block; background: #eaf3ee; }
   .incident-stage { position: relative; display: block; top: auto; height: auto; aspect-ratio: 1440 / 860; }
-  .incident-viewfinder { height: 100%; }
+  .incident-viewfinder { position: relative; height: 100%; }
   .incident-viewfinder::after, .scene-captions { display: none; }
   .incident-plate { inset: 0; width: 100%; transform: none; }
   .incident-note { min-height: auto; padding-block: 26px; }

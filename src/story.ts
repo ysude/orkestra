@@ -32,8 +32,8 @@ export const scenarios: Scenario[] = [
     story: 'Sokak boşalırken su drenaj kuyusunda birikiyor. Atık su ajanı, seviyenin bu binada benzer saatlerde görülen aralığı geçtiğini fark ediyor.',
     measure: 'Kuyu seviyesi', initial: '%36', final: '%78', baseline: 'Olağan aralık %35–50',
     placement: 'left', camera: [
-      [1045, 405, 1.27, [964, 240, 1220, 549]],
-      [1158, 620, 1.62, [1040, 501, 1334, 735]],
+      [1045, 405, 1.02, [964, 240, 1220, 549]],
+      [1123, 586, 1.13, [1040, 501, 1334, 735]],
     ],
     readings: [
       { pump: 'fire', value: 'Hazır', baseline: 'Beklenen: hazır', finding: 'Yangın paneli hazır.' },
@@ -50,8 +50,8 @@ export const scenarios: Scenario[] = [
     story: 'Sakinler eve döndükçe su kullanımı artıyor. Kuyu seviyesi gerilerken hidrofor ajanı, üst kat basıncının bu saatlerdeki olağan aralığın altına düştüğünü görüyor.',
     measure: 'Üst kat basıncı', initial: '3,4 bar', final: '2,6 bar', baseline: 'Olağan aralık 3,2–3,6 bar',
     placement: 'right', camera: [
-      [835, 435, 1.29, [697, 330, 980, 475]],
-      [685, 290, 1.52, [554, 223, 790, 354]],
+      [835, 435, 1.02, [697, 330, 980, 475]],
+      [722, 332, 1.10, [554, 223, 790, 354]],
     ],
     readings: [
       { pump: 'fire', value: 'Hazır', baseline: 'Beklenen: hazır', finding: 'Yangın panelinde uyarı yok.' },
@@ -68,8 +68,8 @@ export const scenarios: Scenario[] = [
     story: 'Gün batarken binanın bir katında duman beliriyor. Yerel yangın paneli alarm bildiriyor. Ajan bu bilgiyi salt okunur izliyor ve şef ajana aktarıyor.',
     measure: 'Yerel yangın paneli', initial: 'Hazır', final: 'Yangın alarmı', baseline: 'Yerel kontrol panelde',
     placement: 'bottom', camera: [
-      [981, 280, 1.45, [946, 154, 1127, 317]],
-      [613, 624, 1.61, [565, 572, 755, 699]],
+      [925, 305, 1.04, [946, 154, 1127, 317]],
+      [706, 560, 1.12, [565, 572, 755, 699]],
     ],
     readings: [
       { pump: 'fire', value: 'Yangın alarmı', baseline: 'Önceki durum: hazır', finding: 'Yerel panel alarm durumuna geçti.' },
