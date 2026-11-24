@@ -32,6 +32,10 @@ docker run --rm -p 127.0.0.1:8080:80 orkestra
 
 Sunumu http://localhost:8080 adresinden açın. İmaj, Node.js 22 ile derlenen statik dosyaları Nginx üzerinden sunar.
 
+## GitHub Pages
+
+`main` dalına her push'ta `.github/workflows/pages.yml` projeyi derleyip GitHub Pages'e yayınlar; Actions sekmesinden elle de çalıştırılabilir. İlk kurulumda depo ayarlarında **Settings → Pages → Source: GitHub Actions** seçilmelidir. Sunum https://ysude.github.io/wilo/ adresinde açılır.
+
 ## 150 saniyelik jüri akışı
 
 Sunumu oynat, açılışı geçip doğrudan mahalleye iner ve pilot ekranının sonuna kadar ilerler. Sunumu duraklatıp kaydırabilir veya üst menüden ilgili bölüme geçebilirsiniz. Baştan oynat, kapanıştan sonra sunumu mahalleden yeniden başlatır.
