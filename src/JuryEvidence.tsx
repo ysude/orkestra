@@ -24,7 +24,6 @@ export function BuildingCase() {
           <JuryCard title="Mevcut yaklaşım ve eksikliği" icon={<ClipboardList size={20} />}>
             <p>Ekip eşik alarmlarına, ayrı kontrolör ekranlarına ve periyodik bakıma dayanır. Hangi sistemin öncelikli olduğunu elle değerlendirir.</p>
             <p><strong>Eksik kalan:</strong> Eşik alarmı sorun büyüdükten sonra gelir ve bir sistemin kararının diğerini nasıl etkilediğini göstermez.</p>
-            <p><strong>Sahada soracağız.</strong> Arızayı ilk kim, hangi işaretten fark ediyor?</p>
           </JuryCard>
           <JuryCard title="Ortak kaynaklar" icon={<Network size={20} />}>
             <p>Ortak depo veya jeneratör olan binalarda bir sistemin kararı diğerini etkileyebilir. Kaynak çakışmalarını bina ekibi yönetir.</p>
