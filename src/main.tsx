@@ -157,6 +157,7 @@ function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresen
         </JuryCard>
         <JuryCard title="Çözüm önerisi">
           <p>Orkestra mevcut kontrolörlerden okur ve önerileri önce dijital ikizde dener. Yönetici olay anında gerekçeyi değerlendirir, teknisyen sahaya gitmeden kontrol listesini açar. Sakin soru sorar, Wilo örnek filo görünümünü izler.</p>
+          <p><strong>Bu sayede</strong> ekip üç ekranı karşılaştırmak yerine tek bir öncelik listesiyle çalışır ve sahaya ilk seferde doğru kontrol listesiyle gider.</p>
         </JuryCard>
       </div>
       <div className="role-tabs" role="tablist" aria-label="Kullanıcı görünümleri">
@@ -225,7 +226,7 @@ function Pilot() {
         </JuryCard>
         <JuryCard title="Beklenen su etkisi" id="su-etkisi" icon={<Droplet size={18} />}>
           <div className="pilot-impact">
-            <div><span>Ana gösterge</span><p><strong>Bina başına aylık plansız pompa olayı</strong></p></div>
+            <div><span>Ana gösterge</span><p><strong>Bina başına aylık plansız pompa olayı</strong></p><p>Sapma erken yakalanırsa su kesintisi kısalır, kuyu taşması ve bodrum baskını azalır, yangın rezervi korunur.</p></div>
             <div>
               <ul aria-label="Sayılacak olay örnekleri">
                 <li>Hizmeti etkileyen basınç düşüşü</li><li>Su baskını</li><li>Plansız arıza</li><li>Kaçırılan yangın testi</li>
@@ -240,6 +241,7 @@ function Pilot() {
         {metrics.map(({ title, detail, icon: Icon }) => <article key={title}><Icon size={24} /><h3>{title}</h3><p>{detail}</p></article>)}
       </div>
       <JuryCard title="Takım · Prometheus" id="takim" icon={<Users size={18} />}>
+        <p className="team-meta">Proje: <strong>Orkestra</strong> · Çalışma alanı: <strong>Bina pompa sistemleri</strong></p>
         <table className="team-roles">
           <thead><tr><th scope="col">Üye</th><th scope="col">Rol</th></tr></thead>
           <tbody>{team.map(({ name, role }) => <tr key={name}><th scope="row">{name}</th><td>{role}</td></tr>)}</tbody>

@@ -325,6 +325,8 @@
 @keyframes decision-message-in { from { opacity: 0; translate: 0 4px; } }
 .building-cards, .building-systems, .building-operations { display: grid; gap: 12px; min-width: 0; }
 .building-cards { margin-top: clamp(18px, 3vh, 30px); }
+.problem-statement { max-width: 80ch; margin-top: clamp(8px, 1.4vh, 14px); font-size: 1rem; line-height: 1.45; }
+.decision-logic .problem-statement { margin-bottom: 4px; }
 .building-systems { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .building-operations { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
 .building-case .jury-card {
@@ -361,7 +363,8 @@
 .pilot-trials li strong { margin-right: 2px; color: #086253; font-size: 1rem; }
 .pilot-impact { display: grid; grid-template-columns: minmax(0, .93fr) minmax(0, 1.07fr); align-items: center; gap: 9px 16px; }
 .pilot-impact span { color: #386457; font-size: .8rem; }
-.pilot-impact > div:first-child p { color: #124b3f; font-size: clamp(1.16rem, 2.05vw, 1.78rem); line-height: 1.15; }
+.pilot-impact > div:first-child p:first-of-type { color: #124b3f; font-size: clamp(1.16rem, 2.05vw, 1.78rem); line-height: 1.15; }
+.pilot-impact > div:first-child p + p { margin-top: 6px; color: #124b3f; font-size: .95rem; line-height: 1.4; }
 .pilot-impact ul { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0 0 5px; }
 .pilot-impact li { padding: 3px 7px; border: 1px solid #a1c4b4; border-radius: 4px; font-size: .77rem; background: #f4faf6; }
 
