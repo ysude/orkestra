@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { ArrowDown, Building2, ChevronsDown, Diamond, Flame, Gauge, GitMerge, RotateCcw, Waves } from 'lucide-react'
+import { ArrowDown, Building2, ChevronsDown, Diamond, Flame, Gauge, GitMerge, RotateCcw, Smartphone, Waves } from 'lucide-react'
 import { pumps } from './content'
 import { BuildingCase } from './JuryEvidence'
 import { glide, lowPower, onFrame, pace, reducedMotion, scrollToElement } from './motion'
 import { depthLayers, drawNeighborhood, sceneHeight, sceneOffsetX, sceneWidth } from './Neighborhood'
 import type { DepthLayer, Neighborhood } from './Neighborhood'
 import { registerRoomSlot } from './RoomStage'
+import { canTilt, disableTilt, enableTilt } from './tilt'
 import { cues, scenarios } from './story'
 import type { CameraPoint } from './story'
 
@@ -62,6 +63,28 @@ function frameAxis(center: number, subjectStart: number, subjectEnd: number,
   return Math.max(subjectMin, Math.min(subjectMax, desired))
 }
 
+function TiltToggle() {
+  const [on, setOn] = useState(false)
+  const [refused, setRefused] = useState(false)
+  if (!canTilt) return null
+
+  async function toggle() {
+    if (on) {
+      disableTilt()
+      setOn(false)
+      return
+    }
+    const granted = await enableTilt().catch(() => false)
+    setOn(granted)
+    setRefused(!granted)
+  }
+
+  return <button type="button" className="tilt-toggle" aria-pressed={on} onClick={toggle}>
+    <Smartphone size={17} aria-hidden="true" />
+    {refused ? 'Hareket izni verilmedi' : on ? 'Eğmeyi kapat' : 'Eğerek gez'}
+  </button>
+}
+
 function Opening() {
   return <section className="opening" id="baslangic" aria-labelledby="opening-title">
     <div className="opening-mark" aria-hidden="true"><span /><span /><span /></div>
@@ -72,6 +95,7 @@ function Opening() {
       <div className="opening-meta">
         <div><span>Takım</span><strong>Prometheus</strong></div>
         <a className="opening-link" href="#ihtiyac">Mahalleye in <ArrowDown size={18} /></a>
+        <TiltToggle />
       </div>
     </div>
   </section>

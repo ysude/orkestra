@@ -585,6 +585,28 @@ html.lenis { scroll-behavior: auto; }
   .scene-skip { display: none; }
 }
 
+/* Phone tilt (opt-in). --tilt-x and --tilt-y stay unset, so 0, until the reader turns it on. */
+.tilt-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: #eff8f0;
+  background: #ffffff14;
+  border: 1px solid #aad8c866;
+  border-radius: 999px;
+  font: 600 .85rem "Segoe UI", system-ui, sans-serif;
+}
+.tilt-toggle[aria-pressed="true"] { background: #aad8c8; color: #0b413e; }
+.opening-mark span { translate: calc(var(--tilt-x, 0) * -26px) calc(var(--tilt-y, 0) * -18px); }
+.opening h1 { translate: calc(var(--tilt-x, 0) * 9px) calc(var(--tilt-y, 0) * 6px); }
+.opening::after { background-position: calc(var(--tilt-x, 0) * -16px) calc(var(--tilt-y, 0) * -16px); }
+.incident-plate { translate: calc(var(--tilt-x, 0) * -14px) calc(var(--tilt-y, 0) * -8px); }
+.phone { transform: perspective(800px) rotateY(calc(var(--tilt-x, 0) * 9deg)) rotateX(calc(var(--tilt-y, 0) * -7deg)); }
+@media (prefers-reduced-motion: reduce) {
+  .tilt-toggle { display: none; }
+}
+
 /* Presentation progress: a line under the header and the elapsed time on the button. */
 .site-header { position: sticky; }
 .presentation-progress {
