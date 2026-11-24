@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { ArrowDown, Building2, ChevronsDown, Diamond, Flame, Gauge, GitMerge, RotateCcw, Smartphone, Waves } from 'lucide-react'
+import { ArrowDown, Building2, ChevronsDown, Diamond, Flame, Gauge, GitMerge, Play, RotateCcw, Smartphone, Waves } from 'lucide-react'
 import { pumps } from './content'
 import { BuildingCase } from './JuryEvidence'
 import { glide, lowPower, onFrame, pace, reducedMotion, scrollToElement } from './motion'
@@ -89,15 +89,21 @@ function Opening() {
   return <section className="opening" id="baslangic" aria-labelledby="opening-title">
     <div className="opening-mark" aria-hidden="true"><span /><span /><span /></div>
     <div className="shell opening-inner">
-      <p className="eyebrow">Water AI Hackathon</p>
-      <h1 id="opening-title">Orkestra<span>.</span></h1>
-      <p className="opening-subtitle">Bir binanın suyla geçen günü.</p>
-      <div className="opening-meta">
-        <div><span>Takım</span><strong>Prometheus</strong></div>
-        <div><span>Çalışma alanı</span><strong>Bina pompa sistemleri</strong></div>
-        <a className="opening-link" href="#ihtiyac">Mahalleye in <ArrowDown size={18} /></a>
-        <TiltToggle />
+      <div className="opening-copy">
+        <p className="eyebrow">Water AI Hackathon</p>
+        <h1 id="opening-title">Orkestra<span>.</span></h1>
+        <p className="opening-subtitle">Bir binanın suyla geçen günü.</p>
+        <div className="opening-meta">
+          <div><span>Takım</span><strong>Prometheus</strong></div>
+          <div><span>Çalışma alanı</span><strong>Bina pompa sistemleri</strong></div>
+          <a className="opening-link" href="#ihtiyac">Mahalleye in <ArrowDown size={18} /></a>
+          <TiltToggle />
+        </div>
       </div>
+      <a className="opening-link opening-video" href="https://youtu.be/sYCDMG_LrJw" target="_blank" rel="noopener noreferrer"
+        aria-label="Ekip sunumunu izle (YouTube, yeni sekmede açılır)">
+        <Play size={18} aria-hidden="true" /> Ekip sunumunu izle
+      </a>
     </div>
   </section>
 }

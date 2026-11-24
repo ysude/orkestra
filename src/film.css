@@ -34,7 +34,13 @@
   background-size: 48px 48px;
   mask-image: linear-gradient(105deg, transparent 27%, #000 86%);
 }
-.opening-inner { padding-block: clamp(38px, 8svh, 80px); }
+.opening-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(18px, 4vw, 60px);
+  padding-block: clamp(38px, 8svh, 80px);
+}
 .opening .eyebrow { color: #aad8c8; }
 .opening h1 {
   font-size: clamp(5.6rem, 15vw, 16rem);
@@ -61,6 +67,7 @@
   border-radius: 5px;
 }
 .opening-link:hover { background: #ffffff; }
+.opening-video { justify-self: end; min-height: 48px; padding-inline: 17px; }
 .opening :focus-visible { outline-color: white; }
 .opening-mark { position: absolute; z-index: -1; inset: 0; pointer-events: none; }
 .opening-mark span {
@@ -390,7 +397,9 @@
   .opening, .fixed-screen { min-height: calc(100svh - 60px); scroll-margin-top: 60px; }
   .opening h1 { font-size: clamp(3.95rem, 17vw, 8rem); }
   .opening-mark span { width: 85vw; left: 84%; }
+  .opening-inner { grid-template-columns: minmax(0, 1fr); }
   .opening-meta { align-items: center; }
+  .opening-video { justify-self: start; }
   .incident-stage { top: 60px; height: calc(100svh - 60px); }
   .incident-note { min-height: 152svh; scroll-margin-top: 60px; }
   .context-note { min-height: calc(100svh - 60px); }
