@@ -114,7 +114,7 @@ export const scenarios: Scenario[] = [
 
 export const presentationSeconds = 150
 export const roleViewsStart = 115
-export const pilotStart = 128
+export const pilotStart = 131
 
 export const cues: { id: string; start: number; label: string; motion?: boolean }[] = [
   { id: 'baslangic', start: 0, label: 'Başlangıç' },

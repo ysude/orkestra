@@ -58,8 +58,8 @@ Sunumu oynat, açılışı geçip doğrudan mahalleye iner ve pilot ekranının 
 | 50–77 sn | **17.10 · Eve dönüş.** Su kullanımı artıyor ve üst kat basıncı 2,6 bara düşüyor. Şefin onaya gönderdiği geçici destek dijital ikizde uygulanıyor ve ölçüm 3,3 bara çıkıyor. |
 | 77–106 sn | **19.10 · Akşam alarmı.** Duman görülüyor ve yerel panel alarm bildiriyor. Şef alarm kaydını önceliklendiriyor ve örnek bildirimin teknik ekibe teslim edildiğini gösteriyor. Yerel kontrol panelde kalıyor. |
 | 106–115 sn | **Yapay zekânın rolü.** Anomali modeli, dijital ikiz, Şef ve asistanın ayrı görevlerini gösterin. |
-| 115–128 sn | **Kullanıcı görünümleri.** Önce yönetici günün olay kaydını görüyor, ardından sakin su kesintisi sorusunun yanıtını açıyor. Teknisyen ve Wilo sekmeleri manuel olarak da incelenebilir. |
-| 128–150 sn | **Pilot kapanışı.** Salt okunur saha verisini, 30 test senaryosunu ve ana göstergeyi anlatın. Ana gösterge bina başına aylık plansız pompa olayıdır. |
+| 115–131 sn | **Kullanıcı görünümleri.** Sekmeler sırayla açılıyor: yönetici günün olay kaydını görüyor, teknisyen ölçüm geçmişini ve bakım kaydını açıyor, sakin su kesintisi sorusunun yanıtını alıyor, Wilo filo görünümünü izliyor. |
+| 131–150 sn | **Pilot kapanışı.** Salt okunur saha verisini, 30 test senaryosunu ve ana göstergeyi anlatın. Ana gösterge bina başına aylık plansız pompa olayıdır. |
 
 ## Sekiz jüri sorusunun akıştaki karşılığı
 

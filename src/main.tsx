@@ -119,15 +119,25 @@ function Fleet() {
   </>
 }
 
+// Seconds after `roleViewsStart` at which the presentation opens each tab.
+const roleSchedule: { at: number; role: Role }[] = [
+  { at: 0, role: 'manager' },
+  { at: 4, role: 'technician' },
+  { at: 7, role: 'resident' },
+  { at: 12, role: 'wilo' },
+]
+const residentAnswer = 9
+
 function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresentation> }) {
   const [selected, setSelected] = useState<Role>('manager')
   const second = presentation.second
   const playing = presentation.playing
-  const showAnswer = playing && second !== null && second >= roleViewsStart + 9 && second < pilotStart
+  const showAnswer = playing && second !== null && second >= roleViewsStart + residentAnswer && second < pilotStart
 
   useEffect(() => {
     if (!playing || second === null || second < roleViewsStart || second >= pilotStart) return
-    setSelected(second >= roleViewsStart + 7 ? 'resident' : 'manager')
+    const elapsed = second - roleViewsStart
+    setSelected(roleSchedule.findLast(({ at }) => at <= elapsed)?.role ?? 'manager')
   }, [playing, second])
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
