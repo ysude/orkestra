@@ -1,10 +1,10 @@
 import { StrictMode, useEffect, useState } from 'react'
-import type { KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Activity, ArrowRight, AudioLines, Bell, Building2, Check,
   ChevronRight, Database, Droplet, FlaskConical, Layers3, Menu, Pause, Play,
-  ShieldCheck, Target, Timer, Wrench, X,
+  ShieldCheck, Target, Timer, Users, Wrench, X,
 } from 'lucide-react'
 import { pumps, roles, team, telemetry } from './content'
 import type { Role } from './content'
@@ -74,14 +74,15 @@ function Manager() {
 
 function Technician() {
   return <>
-    <div className="panel-block"><strong>Kuyu seviyesi · Son 20 dakika</strong>
+    <div className="panel-block"><strong>Kuyu seviyesi · Bugün 16.00–19.10</strong>
       <ol className="telemetry">
         {telemetry.map(({ time, level }) => <li key={time}>
           <span>%{level}</span><div className="bar-track"><span style={{ height: level + '%' }} /></div><span>{time}</span>
         </li>)}
       </ol>
     </div>
-    <div className="panel-alert"><Wrench size={21} /><div><strong>Kuyu ve şamandıra kontrolü önerildi</strong><span>Seviye %78, olağan aralık %35–50.</span></div></div>
+    <div className="panel-alert"><Bell size={21} /><div><strong>19.10 · Yangın alarmı bildirimi teslim edildi</strong><span>Kontrol yerel panelde. Kuyu %44 ile olağan aralığa döndü.</span></div></div>
+    <div className="panel-alert"><Wrench size={21} /><div><strong>Açık bakım kaydı · Kuyu ve şamandıra kontrolü</strong><span>16.20’de seviye %78’e çıktı, olağan aralık %35–50.</span></div></div>
   </>
 }
 
@@ -228,10 +229,16 @@ function Pilot() {
           </div>
         </JuryCard>
       </div>
-      <div className="pilot-strip"><ShieldCheck size={22} /><p>Uyumlu modeller Wilo ile doğrulanacak. Yangın paneli kendi kontrolünü sürdürür.</p><a href="https://wilo.com/za/en/Solutions-Finder/Connectivity/Remote-access/">Wilo Smart Connect <ArrowRight size={16} /></a></div>
+      <div className="pilot-strip"><ShieldCheck size={22} /><p>Uyumlu modeller Wilo ile doğrulanacak. Yangın paneli kendi kontrolünü sürdürür.</p><a href="https://wilo.com/za/en/Solutions-Finder/Connectivity/Remote-access/" hrefLang="en">Wilo Smart Connect (EN) <ArrowRight size={16} /></a></div>
       <div className="metric-grid">
         {metrics.map(({ title, detail, icon: Icon }) => <article key={title}><Icon size={24} /><h3>{title}</h3><p>{detail}</p></article>)}
       </div>
+      <JuryCard title="Takım · Prometheus" id="takim" icon={<Users size={18} />}>
+        <table className="team-roles">
+          <thead><tr><th scope="col">Üye</th><th scope="col">Rol</th></tr></thead>
+          <tbody>{team.map(({ name, role }) => <tr key={name}><th scope="row">{name}</th><td>{role}</td></tr>)}</tbody>
+        </table>
+      </JuryCard>
       <details className="roadmap">
         <summary><span><Layers3 size={20} /> Ürün mimarisi ve yol haritası</span><ChevronRight size={18} /></summary>
         <div className="roadmap-body">
@@ -260,7 +267,7 @@ function App() {
         <Pilot />
       </Journey>
     </main>
-    <footer className="site-footer"><div className="shell footer-inner"><Brand /><p>Prometheus · {team.map(({ name }) => name).join(" · ")}</p></div></footer>
+    <footer className="site-footer"><div className="shell footer-inner"><Brand /><div className="footer-team"><strong>Prometheus</strong><ul>{team.map(({ name, role }) => <li key={name}>{name} <span>{role}</span></li>)}</ul></div></div></footer>
   </>
 }
 

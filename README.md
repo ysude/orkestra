@@ -2,6 +2,15 @@
 
 Prometheus takımının Water AI Hackathon projesi. Orkestra, farklı pompa sistemlerinin ölçümlerini bina ölçeğinde birleştiren bir yönetim konsepti. Sunumdaki olaylar, ölçümler, asistan yanıtları ve bildirimler temsilidir.
 
+## Takım
+
+| Üye | Rol |
+| --- | --- |
+| Gökdeniz Kuruca | Makine öğrenmesi / Backend |
+| Burak Emre Polat | Makine öğrenmesi / Backend |
+| Sude Yıldırım | Frontend / Mobil |
+| Bilge Bostanbaşı | Mobil / Frontend |
+
 ## Yerel kurulum
 
 Node.js 22 ile proje klasöründe çalıştırın.

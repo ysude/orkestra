@@ -564,6 +564,10 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   gauge(687, 604, dusk * 1.7 - 1.3)
   path([[904,581],[904,574]], '#58726a', 2)
   gauge(904, 573, -2.45 + (bar - 2.6) * 2.45)
+  // Valves belong to the pipework, below every label drawn later.
+  valve(649, 620, '#bc6656')
+  valve(831, 582, '#79afbe')
+  valve(1028, 579, '#88bc9e')
 
   rect(628, 681, 119, 11, '#d2ddd1', '#6e8f81')
   rect(638, 650, 53, 28, shade(638,650,638,678,'#b3c9b7','#73958a'), '#50776d')
@@ -679,9 +683,6 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     ctx.globalAlpha = 1
   }
 
-  valve(649, 620, '#bc6656')
-  valve(831, 582, '#79afbe')
-  valve(1028, 579, '#88bc9e')
 
   if (introduce) {
     ctx.globalAlpha = introduce

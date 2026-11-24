@@ -131,6 +131,9 @@ dd { margin: 0; text-align: right; }
 .site-footer { border-top: 1px solid var(--line); }
 .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-block: 22px; }
 .footer-inner p { color: var(--muted); font-size: .88rem; }
+.footer-team { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; font-size: .88rem; }
+.footer-team ul { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; margin: 0; padding: 0; color: #c9dad4; }
+.footer-team li span { opacity: .7; font-size: .8rem; }
 
 @media (max-width: 1000px) {
   .shell { width: calc(100% - 56px); }
@@ -164,3 +167,15 @@ dd { margin: 0; text-align: right; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+#takim { --card-accent: #146b5c; margin-top: 12px; padding: 14px 16px; }
+#takim h3 { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+@media (max-width: 767px) {
+  #takim { padding: 9px 11px; }
+  #takim .jury-card-icon { flex-basis: 28px; height: 28px; }
+}
+.team-roles { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.team-roles th, .team-roles td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+.team-roles thead th { color: var(--muted); font-size: .78rem; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; }
+.team-roles tbody th { font-weight: 650; }
+.team-roles tbody tr:last-child > * { border-bottom: 0; }

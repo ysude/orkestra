@@ -16,7 +16,7 @@ export function BuildingCase() {
           </JuryCard>
           <JuryCard title="Atık su ve drenaj" icon={<Waves size={20} />}>
             <p>Tıkanma ve şamandıra arızası sağanakta taşkına dönüşebilir.</p>
-            <a className="scene-source" href="https://wilo.com/gb/en/home-and-garden/Solutions/Dewatering-flood-control/">Wilo bodrum drenajı rehberi</a>
+            <a className="scene-source" href="https://wilo.com/tr/tr/Hizmetlerimiz/Segmentler-i%C3%A7in-%C3%A7%C3%B6z%C3%BCmler/Su-y%C3%B6netimi-%C3%A7%C3%B6z%C3%BCmleri/Ta%C5%9Fk%C4%B1n-Y%C3%B6netimi/">Wilo taşkın yönetimi</a>
           </JuryCard>
         </div>
         <div className="building-operations">
