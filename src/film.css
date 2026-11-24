@@ -112,6 +112,7 @@
   will-change: transform;
 }
 .incident-plate canvas { display: block; width: 100%; height: auto; }
+.incident-plate[data-layer] { pointer-events: none; }
 .incident-story { z-index: 1; position: relative; pointer-events: none; }
 .incident-story .story-panel[data-visible], .static-caption, .scene-source { pointer-events: auto; }
 .scene-source { justify-self: start; color: #1a6256; font-size: .8rem; text-decoration: underline; text-underline-offset: 2px; }
@@ -446,6 +447,7 @@
   .motion-reading { gap: 3px 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .incident-plate[data-layer] { display: none; }
   .incident-story { pointer-events: auto; }
   .story-panel { visibility: visible; opacity: 1; translate: none; }
   .incident { display: block; background: #eaf3ee; }
@@ -470,4 +472,155 @@
   .still-scene { display: block; width: auto; max-width: 100%; max-height: 52svh; height: auto; }
   .action-live, .action-replay { display: none; }
   .static-result { display: block; }
+}
+
+/* Lenis drives scrolling; the browser's own smooth scroll would fight it. */
+html.lenis { scroll-behavior: auto; }
+
+/* Scene mood: the canvas sets html[data-scene] as the day moves on. */
+@property --scene-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #096756;
+}
+:root { --scene-accent: #096756; transition: --scene-accent .9s ease; }
+:root[data-scene="rain"] { --scene-accent: #2f5f78; }
+:root[data-scene="clear"] { --scene-accent: #1f6390; }
+:root[data-scene="alarm"] { --scene-accent: #a2402f; }
+
+.site-header { box-shadow: inset 0 -3px 0 var(--scene-accent); }
+.presentation-toggle { background: var(--scene-accent); border-color: var(--scene-accent); }
+.presentation-toggle:hover { background: color-mix(in srgb, var(--scene-accent), #000 22%); }
+.incident .signal { background: var(--scene-accent); }
+.scene-caption, .illustrated-card { border-top: 3px solid var(--scene-accent); }
+
+/* Dwell: a pinned beat holds its card while the page scrolls through extra room. */
+:root { --header-height: 68px; --dwell: 55svh; }
+.beat-pin { display: contents; }
+@media (prefers-reduced-motion: no-preference) {
+  .incident [data-dwell] {
+    display: block;
+    min-height: calc(100svh - var(--header-height) + var(--dwell));
+    padding-block: 0;
+  }
+  .incident [data-dwell] > .beat-pin {
+    position: sticky;
+    top: var(--header-height);
+    display: grid;
+    min-height: calc(100svh - var(--header-height));
+    align-items: center;
+    padding-block: var(--pin-padding);
+  }
+  .incident .fixed-screen[data-dwell] { --pin-padding: clamp(28px, 6svh, 78px); }
+  .incident .illustrated-beat[data-dwell] { --pin-padding: 18px; }
+  .incident .illustrated-beat[data-dwell] > .beat-pin { justify-items: start; }
+  .incident .action-right[data-dwell] > .beat-pin { justify-items: end; }
+}
+@media (max-width: 767px) {
+  :root { --header-height: 60px; --dwell: 45svh; }
+  .incident .illustrated-beat[data-dwell] { --pin-padding: 16px 24px; }
+  .incident .illustrated-beat[data-dwell] > .beat-pin,
+  .incident .action-right[data-dwell] > .beat-pin { align-items: end; justify-items: center; }
+}
+
+/* 3D pump room on the decision screens. Without .room-live the cards keep their grid. */
+.pump-room { position: relative; }
+.pump-room-canvas { display: none; }
+.pump-room.room-live { height: clamp(300px, 44svh, 480px); margin-bottom: 12px; }
+.room-live .pump-room-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.room-live .network-lines { display: none; }
+.room-live .pump-network { position: absolute; inset: 0; z-index: 1; display: block; pointer-events: none; }
+.room-live .network-pump {
+  position: absolute;
+  left: var(--card-x, 50%);
+  top: var(--anchor-y, 50%);
+  width: min(24%, 225px);
+  padding: 8px 11px;
+  translate: -50% calc(-100% - 18px);
+  box-shadow: 0 8px 22px #16443a2e;
+  pointer-events: auto;
+}
+.room-live .network-pump::after {
+  content: "";
+  position: absolute;
+  left: calc(50% + var(--stem-offset, 0px));
+  top: 100%;
+  width: 7px;
+  height: 18px;
+  translate: -50% 0;
+  background: radial-gradient(circle at 50% calc(100% - 3.5px), #2a6f62 3px, transparent 3.5px), linear-gradient(#5e9f90, #5e9f90) center top / 1.5px calc(100% - 6px) no-repeat;
+}
+.room-live .network-pump > strong { font-size: clamp(1rem, 1.6vw, 1.45rem); }
+.room-live .network-pump:not(.focus-pump) p { display: none; }
+.room-live .network-pump p { font-size: .85rem; line-height: 1.35; }
+.room-live .focus-pump { border-color: var(--scene-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--scene-accent), transparent 70%), 0 8px 22px #16443a2e; }
+.decision-screen:has(.room-live) h2 { margin-bottom: 10px; font-size: clamp(2rem, 3.4vw, 3.3rem); }
+
+/* Next-section shortcut, hidden while the presentation plays itself. */
+.scene-skip {
+  position: absolute;
+  z-index: 3;
+  right: clamp(14px, 2.4vw, 32px);
+  bottom: clamp(14px, 3svh, 30px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  background: color-mix(in srgb, var(--scene-accent), #0b2622 25%);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px #16443a40;
+  font: 650 .85rem "Segoe UI", system-ui, sans-serif;
+  pointer-events: auto;
+  opacity: .92;
+  transition: opacity .25s, background-color .9s;
+}
+.scene-skip:hover, .scene-skip:focus-visible { opacity: 1; }
+.scene-skip[data-playing] { visibility: hidden; opacity: 0; }
+@media (max-width: 767px) {
+  .scene-skip { top: 12px; bottom: auto; right: 12px; padding: 6px 10px; font-size: .78rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-skip { display: none; }
+}
+
+/* Phone tilt (opt-in). --tilt-x and --tilt-y stay unset, so 0, until the reader turns it on. */
+.tilt-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: #eff8f0;
+  background: #ffffff14;
+  border: 1px solid #aad8c866;
+  border-radius: 999px;
+  font: 600 .85rem "Segoe UI", system-ui, sans-serif;
+}
+.tilt-toggle[aria-pressed="true"] { background: #aad8c8; color: #0b413e; }
+.opening-mark span { translate: calc(var(--tilt-x, 0) * -26px) calc(var(--tilt-y, 0) * -18px); }
+.opening h1 { translate: calc(var(--tilt-x, 0) * 9px) calc(var(--tilt-y, 0) * 6px); }
+.opening::after { background-position: calc(var(--tilt-x, 0) * -16px) calc(var(--tilt-y, 0) * -16px); }
+.incident-plate { translate: calc(var(--tilt-x, 0) * -14px) calc(var(--tilt-y, 0) * -8px); }
+.phone { transform: perspective(800px) rotateY(calc(var(--tilt-x, 0) * 9deg)) rotateX(calc(var(--tilt-y, 0) * -7deg)); }
+@media (prefers-reduced-motion: reduce) {
+  .tilt-toggle { display: none; }
+}
+
+/* Presentation progress: a line under the header and the elapsed time on the button. */
+.site-header { position: sticky; }
+.presentation-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: color-mix(in srgb, var(--scene-accent), #fff 35%);
+  transform-origin: left;
+  scale: var(--progress, 0) 1;
+  transition: scale 1s linear;
+}
+.presentation-time { font: 600 .78rem var(--mono, monospace); opacity: .82; margin-left: 2px; }
+@media (max-width: 767px) {
+  .presentation-time { display: none; }
 }

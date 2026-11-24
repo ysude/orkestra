@@ -3,7 +3,7 @@ import { JuryCard } from './JuryCard'
 
 export function BuildingCase() {
   return <section className="section fixed-screen static-beat building-case" id="bina-sorunu" aria-labelledby="building-case-title">
-    <div className="shell story-panel">
+    <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">Problem · Konut siteleri · Pompa dairesi</p>
       <h2 id="building-case-title">Üç ayrı alarm, bir bina.</h2>
       <div className="building-cards">
@@ -16,7 +16,7 @@ export function BuildingCase() {
           </JuryCard>
           <JuryCard title="Atık su ve drenaj" icon={<Waves size={20} />}>
             <p>Tıkanma ve şamandıra arızası sağanakta taşkına dönüşebilir.</p>
-            <a className="scene-source" href="https://wilo.com/gb/en/home-and-garden/Solutions/Dewatering-flood-control/">Wilo bodrum drenajı rehberi</a>
+            <a className="scene-source" href="https://wilo.com/tr/tr/Hizmetlerimiz/Segmentler-i%C3%A7in-%C3%A7%C3%B6z%C3%BCmler/Su-y%C3%B6netimi-%C3%A7%C3%B6z%C3%BCmleri/Ta%C5%9Fk%C4%B1n-Y%C3%B6netimi/">Wilo taşkın yönetimi</a>
           </JuryCard>
         </div>
         <div className="building-operations">
@@ -29,13 +29,13 @@ export function BuildingCase() {
           </JuryCard>
         </div>
       </div>
-    </div>
+    </div></div>
   </section>
 }
 
 export function DecisionLogic() {
   return <section className="section fixed-screen static-beat decision-logic" id="yapay-zeka" aria-labelledby="decision-logic-title">
-    <div className="shell story-panel">
+    <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">Yapay zekânın rolü · Sağanak örneği</p>
       <h2 id="decision-logic-title">Her katmanın ayrı bir işi var.</h2>
       <div className="jury-grid decision-visuals">
@@ -78,6 +78,6 @@ export function DecisionLogic() {
           </div>
         </JuryCard>
       </div>
-    </div>
+    </div></div>
   </section>
 }

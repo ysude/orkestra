@@ -38,14 +38,14 @@ export type Role = typeof roles[number]['id']
 
 export const telemetry = [
   { time: '16.00', level: 36 },
-  { time: '16.05', level: 42 },
-  { time: '16.10', level: 50 },
-  { time: '16.15', level: 63 },
   { time: '16.20', level: 78 },
+  { time: '16.40', level: 61 },
+  { time: '18.00', level: 52 },
+  { time: '19.10', level: 44 },
 ]
 export const team = [
   { name: 'Gökdeniz Kuruca', role: 'Makine öğrenmesi / Backend' },
   { name: 'Burak Emre Polat', role: 'Makine öğrenmesi / Backend' },
-  { name: 'Sude Yıldırım', role: 'Frontend' },
-  { name: 'Bilge Bostanbaşı', role: 'Mobil' },
+  { name: 'Sude Yıldırım', role: 'Frontend / Mobil' },
+  { name: 'Bilge Bostanbaşı', role: 'Mobil / Frontend' },
 ]

@@ -20,6 +20,8 @@ type Scenario = {
   placement: 'left' | 'right' | 'bottom'
   camera: readonly [start: CameraPoint, end: CameraPoint]
   readings: Reading[]
+  // Numeric state of the pump room for the 3D view, matching `readings`.
+  room: { level: number; bar: number; alarm: boolean }
   priority: string
   action: string
   reason: string
@@ -41,6 +43,7 @@ export const scenarios: Scenario[] = [
       { pump: 'pressure', value: '3,4 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Kullanım suyu basıncı olağan.' },
       { pump: 'drainage', value: '%78', baseline: 'Olağan: %35–50', finding: 'Kuyu seviyesi geçmişteki üst sınırı aştı.' },
     ],
+    room: { level: 78, bar: 3.4, alarm: false },
     priority: 'Drenaj incelemesi',
     action: 'Drenaj kaydı aç ve kontrollü tahliye iste.',
     reason: 'Kuyu seviyesi %78’e çıktı. Hidrofor ve yangın paneli olağan durumda.',
@@ -67,6 +70,7 @@ export const scenarios: Scenario[] = [
       { pump: 'pressure', value: '2,6 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Eve dönüş saatinde basınç olağan aralığın altına indi.' },
       { pump: 'drainage', value: '%61', baseline: 'Olağan: %35–50', finding: 'Kuyu geriliyor. Önceki drenaj incelemesi açık.' },
     ],
+    room: { level: 61, bar: 2.6, alarm: false },
     priority: 'Hizmet kontrolü',
     action: 'Hidrofor için geçici basınç desteğini onaya gönder.',
     reason: 'Drenaj toparlanıyor. Üst kat basıncı düşerken diğer pompalarda müdahale gerektiren bir sapma yok.',
@@ -93,6 +97,7 @@ export const scenarios: Scenario[] = [
       { pump: 'pressure', value: '3,3 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Kullanım suyu basıncı olağan aralığa döndü.' },
       { pump: 'drainage', value: '%44', baseline: 'Olağan: %35–50', finding: 'Kuyu seviyesi olağan aralığa döndü.' },
     ],
+    room: { level: 44, bar: 3.3, alarm: true },
     priority: 'Öncelikli bildirim',
     action: 'Yerel yangın alarmını bakım bildirimlerinin önüne al.',
     reason: 'Şef ajan alarmı teknik ekibe yönlendirir. Yangın sisteminin denetimi yerel panelde kalır.',
@@ -107,25 +112,25 @@ export const scenarios: Scenario[] = [
   },
 ]
 
-export const presentationSeconds = 195
-export const roleViewsStart = 149
-export const pilotStart = 164
+export const presentationSeconds = 150
+export const roleViewsStart = 115
+export const pilotStart = 128
 
-export const cues = [
-  { id: 'baslangic', start: 0 },
-  { id: 'ihtiyac', start: 13 },
-  { id: 'bina-sorunu', start: 21, motion: true },
-  { id: 'ajanlar', start: 31 },
-  { id: scenarios[0].id, start: 38, motion: true },
-  { id: scenarios[0].decisionId, start: 55 },
-  { id: scenarios[0].execution.id, start: 61 },
-  { id: scenarios[1].id, start: 68, motion: true },
-  { id: scenarios[1].decisionId, start: 86 },
-  { id: scenarios[1].execution.id, start: 92 },
-  { id: scenarios[2].id, start: 100, motion: true },
-  { id: scenarios[2].decisionId, start: 122 },
-  { id: scenarios[2].execution.id, start: 130 },
-  { id: 'yapay-zeka', start: 138, motion: true },
-  { id: 'gorunumler', start: roleViewsStart, motion: true },
-  { id: 'pilot', start: pilotStart, motion: true },
+export const cues: { id: string; start: number; label: string; motion?: boolean }[] = [
+  { id: 'baslangic', start: 0, label: 'Başlangıç' },
+  { id: 'ihtiyac', start: 1, label: 'Günün başlangıcı' },
+  { id: 'bina-sorunu', start: 8, label: 'Problem', motion: true },
+  { id: 'ajanlar', start: 17, label: 'Dört ajan' },
+  { id: scenarios[0].id, start: 23, label: 'Sağanak', motion: true },
+  { id: scenarios[0].decisionId, start: 37, label: 'Şefin kararı' },
+  { id: scenarios[0].execution.id, start: 43, label: 'Tahliye' },
+  { id: scenarios[1].id, start: 50, label: 'Eve dönüş', motion: true },
+  { id: scenarios[1].decisionId, start: 64, label: 'Şefin kararı' },
+  { id: scenarios[1].execution.id, start: 70, label: 'Basınç desteği' },
+  { id: scenarios[2].id, start: 77, label: 'Akşam alarmı', motion: true },
+  { id: scenarios[2].decisionId, start: 93, label: 'Şefin kararı' },
+  { id: scenarios[2].execution.id, start: 99, label: 'Alarm iletimi' },
+  { id: 'yapay-zeka', start: 106, label: 'Yapay zekânın rolü', motion: true },
+  { id: 'gorunumler', start: roleViewsStart, label: 'Arayüzler', motion: true },
+  { id: 'pilot', start: pilotStart, label: 'Pilot', motion: true },
 ]

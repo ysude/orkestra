@@ -16,6 +16,26 @@ export type Neighborhood = {
   action?: { key: 'drainage' | 'pressure' | 'fire'; progress: number; reveal?: number; time?: number }
 }
 
+export type DepthLayer = 'far' | 'mid' | 'front'
+
+// Optional depth layers. Sky and skyline go to `far`, the neighbouring blocks to
+// `mid`, rain to `front`; everything else stays on `main`. A layer left out is
+// drawn on `main`, so a single context still renders the whole scene. A layer in
+// `keep` is skipped because its canvas already shows the right picture.
+export type SceneLayers = {
+  main: CanvasRenderingContext2D
+  far?: CanvasRenderingContext2D
+  mid?: CanvasRenderingContext2D
+  front?: CanvasRenderingContext2D
+  keep?: ReadonlySet<DepthLayer>
+}
+
+export const depthLayers: Record<DepthLayer, { parallax: number; resolution: number }> = {
+  far: { parallax: .72, resolution: .45 },
+  mid: { parallax: .87, resolution: .7 },
+  front: { parallax: 1.12, resolution: .5 },
+}
+
 function smooth(value: number) {
   const step = Math.min(1, Math.max(0, value))
   return step * step * (3 - 2 * step)
@@ -30,7 +50,30 @@ function mix(first: string, second: string, factor: number) {
   return 'rgb(' + channels.join(',') + ')'
 }
 
-export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, dusk, time, moving, introduce, drained, supported, action }: Neighborhood) {
+export function drawNeighborhood(target: CanvasRenderingContext2D | SceneLayers, { rain, clear, dusk, time, moving, introduce, drained, supported, action }: Neighborhood) {
+  const layers: SceneLayers = 'canvas' in target ? { main: target } : target
+  const cleared = new Set<CanvasRenderingContext2D>()
+  let ctx = layers.main
+
+  // Switch the drawing surface. Returns false when that layer is kept as is.
+  function use(layer: DepthLayer | 'main') {
+    const next = layer === 'main' ? layers.main : layers[layer] ?? layers.main
+    if (layer !== 'main' && layers[layer] && layers.keep?.has(layer)) return false
+    if (next !== ctx) {
+      ctx.restore()
+      ctx = next
+      if (!cleared.has(ctx)) {
+        ctx.clearRect(0, 0, sceneWidth, sceneHeight)
+        cleared.add(ctx)
+      }
+      ctx.save()
+      ctx.translate(sceneOffsetX, 0)
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
+    }
+    return true
+  }
+
   const ink = '#365556'
   const paper = '#edf3e9'
   const mint = '#6fb2a2'
@@ -371,10 +414,12 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   }
 
   ctx.clearRect(0, 0, sceneWidth, sceneHeight)
+  cleared.add(ctx)
   ctx.save()
   ctx.translate(sceneOffsetX, 0)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
+  if (use('far')) {
   const skyFill = ctx.createLinearGradient(0, 0, 0, 435)
   skyFill.addColorStop(0, sky)
   skyFill.addColorStop(1, horizon)
@@ -412,6 +457,8 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     for (let row = 0; row < 3; row++) rect(x + 28, 397 - h + row * 23, 32, 4, '#c7d7c9')
   }
   polygon([[west,369],[-630,380],[0,386],[309,365],[542,392],[811,369],[1130,382],[1440,361],[2055,377],[east,363],[east,455],[west,455]], '#b4cabe')
+  }
+  if (use('mid')) {
   apartment(-1050, 239, 192, 184, '#d0ddd0', '#aebeb2', 4, 4)
   apartment(-795, 285, 176, 136, '#e0dbcb', '#b8b9a9', 3, 4)
   apartment(-548, 208, 214, 214, '#d7e2db', '#abbeb5', 5, 5)
@@ -424,6 +471,8 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   apartment(1902, 277, 167, 145, '#ceddd3', '#a6b9af', 3, 4)
   apartment(2158, 240, 205, 182, '#d9decd', '#b8bfae', 4, 5)
   apartment(2427, 283, 160, 137, '#d7e3d8', '#a5bcb1', 3, 4)
+  }
+  use('main')
   rect(west, 421, sceneWidth, 25, '#e6ece0')
   path([[west,425],[east,425]], '#a4b5a6', 1)
   for (let x = west + 9; x < east; x += 26) path([[x,427],[x - 8,445]], '#bac9b9', 1)
@@ -564,6 +613,10 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
   gauge(687, 604, dusk * 1.7 - 1.3)
   path([[904,581],[904,574]], '#58726a', 2)
   gauge(904, 573, -2.45 + (bar - 2.6) * 2.45)
+  // Valves belong to the pipework, below every label drawn later.
+  valve(649, 620, '#bc6656')
+  valve(831, 582, '#79afbe')
+  valve(1028, 579, '#88bc9e')
 
   rect(628, 681, 119, 11, '#d2ddd1', '#6e8f81')
   rect(638, 650, 53, 28, shade(638,650,638,678,'#b3c9b7','#73958a'), '#50776d')
@@ -679,9 +732,6 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     ctx.globalAlpha = 1
   }
 
-  valve(649, 620, '#bc6656')
-  valve(831, 582, '#79afbe')
-  valve(1028, 579, '#88bc9e')
 
   if (introduce) {
     ctx.globalAlpha = introduce
@@ -768,11 +818,14 @@ export function drawNeighborhood(ctx: CanvasRenderingContext2D, { rain, clear, d
     disc(854, 584, 1.5, '#daefe0')
   }
 
-  ctx.globalAlpha = weather * .8
-  for (let i = 0; i < 220; i++) {
-    const x = west + (i * 197.3 + 41) % sceneWidth
-    const y = (i * 73.4 + time * (moving ? 227 + i % 7 * 18 : 0)) % 439
-    path([[x,y],[x - 6,Math.min(445,y + 15 + i % 5)]], '#e2f5f1', 1.4)
+  if (use('front')) {
+    ctx.globalAlpha = weather * .8
+    for (let i = 0; i < 220; i++) {
+      const x = west + (i * 197.3 + 41) % sceneWidth
+      const y = (i * 73.4 + time * (moving ? 227 + i % 7 * 18 : 0)) % 439
+      path([[x,y],[x - 6,Math.min(445,y + 15 + i % 5)]], '#e2f5f1', 1.4)
+    }
+    ctx.globalAlpha = 1
   }
   ctx.restore()
 }
