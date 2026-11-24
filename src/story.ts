@@ -112,25 +112,23 @@ export const scenarios: Scenario[] = [
   },
 ]
 
-export const presentationSeconds = 158
-export const roleViewsStart = 123
-export const pilotStart = 139
+export const presentationSeconds = 180
 
-export const cues: { id: string; start: number; label: string; motion?: boolean }[] = [
-  { id: 'baslangic', start: 0, label: 'Başlangıç' },
-  { id: 'ihtiyac', start: 1, label: 'Günün başlangıcı' },
-  { id: 'bina-sorunu', start: 8, label: 'Problem', motion: true },
-  { id: 'ajanlar', start: 25, label: 'Dört ajan' },
-  { id: scenarios[0].id, start: 31, label: 'Sağanak', motion: true },
-  { id: scenarios[0].decisionId, start: 45, label: 'Şefin kararı' },
-  { id: scenarios[0].execution.id, start: 51, label: 'Tahliye' },
-  { id: scenarios[1].id, start: 58, label: 'Eve dönüş', motion: true },
-  { id: scenarios[1].decisionId, start: 72, label: 'Şefin kararı' },
-  { id: scenarios[1].execution.id, start: 78, label: 'Basınç desteği' },
-  { id: scenarios[2].id, start: 85, label: 'Akşam alarmı', motion: true },
-  { id: scenarios[2].decisionId, start: 101, label: 'Şefin kararı' },
-  { id: scenarios[2].execution.id, start: 107, label: 'Alarm iletimi' },
-  { id: 'yapay-zeka', start: 114, label: 'Yapay zekânın rolü', motion: true },
-  { id: 'gorunumler', start: roleViewsStart, label: 'Arayüzler', motion: true },
-  { id: 'pilot', start: pilotStart, label: 'Pilot', motion: true },
+export const cues: { id: string; minimumSeconds: number; label: string }[] = [
+  { id: 'baslangic', minimumSeconds: 1, label: 'Başlangıç' },
+  { id: 'ihtiyac', minimumSeconds: 7, label: 'Günün başlangıcı' },
+  { id: 'bina-sorunu', minimumSeconds: 17, label: 'Problem' },
+  { id: 'ajanlar', minimumSeconds: 6, label: 'Dört ajan' },
+  { id: scenarios[0].id, minimumSeconds: 14, label: 'Sağanak' },
+  { id: scenarios[0].decisionId, minimumSeconds: 6, label: 'Şefin kararı' },
+  { id: scenarios[0].execution.id, minimumSeconds: 7, label: 'Tahliye' },
+  { id: scenarios[1].id, minimumSeconds: 14, label: 'Eve dönüş' },
+  { id: scenarios[1].decisionId, minimumSeconds: 6, label: 'Şefin kararı' },
+  { id: scenarios[1].execution.id, minimumSeconds: 7, label: 'Basınç desteği' },
+  { id: scenarios[2].id, minimumSeconds: 16, label: 'Akşam alarmı' },
+  { id: scenarios[2].decisionId, minimumSeconds: 6, label: 'Şefin kararı' },
+  { id: scenarios[2].execution.id, minimumSeconds: 7, label: 'Alarm iletimi' },
+  { id: 'yapay-zeka', minimumSeconds: 9, label: 'Yapay zekânın rolü' },
+  { id: 'gorunumler', minimumSeconds: 16, label: 'Arayüzler' },
+  { id: 'pilot', minimumSeconds: 19, label: 'Pilot' },
 ]

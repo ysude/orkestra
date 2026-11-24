@@ -12,7 +12,7 @@ import { Journey } from './Film'
 import { JuryCard } from './JuryCard'
 import { DecisionLogic } from './JuryEvidence'
 import { usePresentation } from './presentation'
-import { pilotStart, presentationSeconds, roleViewsStart, scenarios } from './story'
+import { presentationSeconds, scenarios } from './story'
 import './styles.css'
 import './comic.css'
 import './film.css'
@@ -92,9 +92,9 @@ function Technician() {
   </>
 }
 
-function Resident({ showAnswer }: { showAnswer: boolean }) {
+function Resident({ showAnswer }: { showAnswer: boolean | null }) {
   const [answer, setAnswer] = useState(false)
-  useEffect(() => { if (showAnswer) setAnswer(true) }, [showAnswer])
+  useEffect(() => { if (showAnswer !== null) setAnswer(showAnswer) }, [showAnswer])
   return <div className="phone">
     <div className="phone-top"><span>19.10</span><span>Orkestra</span></div>
     <div className="phone-notification"><Bell size={16} /><div><strong>Bina bildirimi</strong><span>Eve dönüşte görülen basınç düşüşünden sonra su basıncı olağan aralığa döndü.</span></div></div>
@@ -119,26 +119,25 @@ function Fleet() {
   </>
 }
 
-// Seconds after `roleViewsStart` at which the presentation opens each tab.
+// Fractions of the role section's allotted time.
 const roleSchedule: { at: number; role: Role }[] = [
   { at: 0, role: 'manager' },
-  { at: 4, role: 'technician' },
-  { at: 7, role: 'resident' },
-  { at: 12, role: 'wilo' },
+  { at: 4 / 16, role: 'technician' },
+  { at: 7 / 16, role: 'resident' },
+  { at: 12 / 16, role: 'wilo' },
 ]
-const residentAnswer = 9
+const residentAnswer = 9 / 16
 
 function RoleViews({ presentation }: { presentation: ReturnType<typeof usePresentation> }) {
   const [selected, setSelected] = useState<Role>('manager')
-  const second = presentation.second
-  const playing = presentation.playing
-  const showAnswer = playing && second !== null && second >= roleViewsStart + residentAnswer && second < pilotStart
+  const { playing, playback } = presentation
+  const progress = playing && playback?.section === 'gorunumler' ? playback.sectionProgress : null
+  const showAnswer = progress === null ? null : progress >= residentAnswer
 
   useEffect(() => {
-    if (!playing || second === null || second < roleViewsStart || second >= pilotStart) return
-    const elapsed = second - roleViewsStart
-    setSelected(roleSchedule.findLast(({ at }) => at <= elapsed)?.role ?? 'manager')
-  }, [playing, second])
+    if (progress === null) return
+    setSelected(roleSchedule.findLast(({ at }) => at <= progress)?.role ?? 'manager')
+  }, [progress])
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const last = roles.length - 1

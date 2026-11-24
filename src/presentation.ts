@@ -21,24 +21,44 @@ function unease(value: number) {
   return (low + high) / 2
 }
 
-const span = (index: number) => Math.max(1, (cues[index + 1]?.start ?? presentationSeconds) - cues[index].start - transition - hold)
+const span = (duration: number) => Math.max(1, duration - transition - hold)
 
 function measure() {
   const header = document.querySelector('header')
   const top = header?.getBoundingClientRect().height ?? 0
-  return cues.map((cue) => {
-    const node = document.getElementById(cue.id)
+  const viewport = Math.max(1, window.innerHeight - top)
+  return cues.map(({ id }) => {
+    const node = document.getElementById(id)
     const start = node ? node.getBoundingClientRect().top + window.scrollY - top : 0
-    // Beats that move, and beats with a pinned card, are scrolled through rather than parked at their top.
-    const moves = node && (cue.motion || node.hasAttribute('data-dwell'))
-    return { start: Math.max(0, start), travel: moves ? Math.max(0, node.offsetHeight - window.innerHeight + top) : 0 }
+    const pin = node?.hasAttribute('data-dwell') ? node.querySelector<HTMLElement>(':scope > .beat-pin') : null
+    const height = Math.max(1, pin?.offsetHeight ?? node?.offsetHeight ?? 0)
+    const travel = Math.max(0, (node?.offsetHeight ?? 0) - viewport)
+    return { start: Math.max(0, start), height, travel, pages: Math.max(1, Math.ceil(travel / viewport)) }
   })
 }
 
+function schedule(positions: ReturnType<typeof measure>) {
+  const extraSeconds = presentationSeconds - cues.reduce((total, cue) => total + cue.minimumSeconds, 0)
+  const totalHeight = positions.slice(1).reduce((total, position) => total + position.height, 0)
+  let minimumStart = 0
+  let height = 0
+
+  return cues.map((cue, index) => {
+    // Round cumulative time so the extra seconds add up to the exact total.
+    const start = minimumStart + Math.round(extraSeconds * height / totalHeight)
+    minimumStart += cue.minimumSeconds
+    if (index > 0) height += positions[index].height
+    return start
+  })
+}
+
+type Playback = { second: number; section: string; sectionProgress: number }
+
 export function usePresentation() {
-  const checkpoint = useRef({ time: 0, scroll: 0, transitioning: false })
+  const checkpoint = useRef({ time: 0, scroll: 0, transitioning: false, skipOpening: false })
+  const timeline = useRef<number[] | null>(null)
   const [playing, setPlaying] = useState(false)
-  const [second, setSecond] = useState<number | null>(null)
+  const [playback, setPlayback] = useState<Playback | null>(null)
 
   useEffect(() => {
     if (!playing) return
@@ -47,17 +67,19 @@ export function usePresentation() {
     const reduced = reducedMotion
     const prior = checkpoint.current
     const scroll = window.scrollY
+    const restart = prior.time >= presentationSeconds
+    // Changing tabs or resizing changes scroll positions; the running clock keeps its schedule.
+    if (!timeline.current || restart) timeline.current = schedule(positions)
+    const starts = timeline.current
+    const duration = (index: number) => (starts[index + 1] ?? presentationSeconds) - starts[index]
     const current = Math.max(0, positions.findLastIndex((position) => position.start <= scroll + 5))
-    const cue = cues[current]
     const motionPosition = positions[current]
-    const manualTime = cue.start + (motionPosition.travel > 0
-      ? transition + unease(clamp((scroll - motionPosition.start) / motionPosition.travel)) * span(current)
+    const manualTime = starts[current] + (current > 0 && motionPosition.travel > 0
+      ? transition + unease(clamp((scroll - motionPosition.start) / motionPosition.travel)) * span(duration(current))
       : 0)
     const resumesCheckpoint = Math.abs(prior.scroll - scroll) < 8
-    const resume = resumesCheckpoint ? prior.time : manualTime
-    // Starting over skips the title and opens straight on the neighbourhood.
-    const restart = resume >= presentationSeconds
-    const initial = restart ? cues[1].start : resume
+    const skipOpening = restart || (resumesCheckpoint && prior.skipOpening)
+    const initial = restart ? 0 : resumesCheckpoint ? prior.time : manualTime
     const started = performance.now()
     const wallStarted = Date.now()
     let finished = false
@@ -66,24 +88,29 @@ export function usePresentation() {
       if (finished) return
       const elapsed = Math.max(0, now - started, Date.now() - wallStarted)
       const time = Math.min(presentationSeconds, initial + elapsed / 1000)
-      const index = cues.findLastIndex((entry) => entry.start <= time)
-      const active = cues[index]
+      const index = Math.max(skipOpening ? 1 : 0, starts.findLastIndex((start) => start <= time))
       const location = positions[index]
       const previous = positions[index - 1]
-      const since = time - active.start
+      const since = Math.max(0, time - starts[index])
       const transitioning = since < transition && previous && !reduced.matches &&
-        (initial < active.start || (resumesCheckpoint && prior.transitioning))
+        !(skipOpening && index === 1) && (initial < starts[index] || (resumesCheckpoint && prior.transitioning))
+      const progress = clamp((since - transition) / span(duration(index)))
+      const travelProgress = reduced.matches ? Math.floor(progress * location.pages) / location.pages : ease(progress)
       const scheduled = transitioning
         ? previous.start + previous.travel + (location.start - previous.start - previous.travel) * ease(clamp(since / transition))
-        : location.start + (reduced.matches ? 0 : location.travel * ease(clamp((since - transition) / span(index))))
+        : location.start + location.travel * travelProgress
       // Starting away from the scheduled spot glides there instead of jumping.
       const arrival = resumesCheckpoint || restart || reduced.matches ? 1 : ease(clamp(elapsed / 1000 / settle))
       const goal = scroll + (scheduled - scroll) * arrival
       if (Math.abs(window.scrollY - goal) >= 1) scrollToY(goal)
 
-      checkpoint.current = { time, scroll: window.scrollY, transitioning: Boolean(transitioning) }
+      checkpoint.current = { time, scroll: window.scrollY, transitioning: Boolean(transitioning), skipOpening }
       const whole = Math.floor(time)
-      setSecond((previousSecond) => previousSecond === whole ? previousSecond : whole)
+      setPlayback((previousPlayback) => previousPlayback?.second === whole ? previousPlayback : {
+        second: whole,
+        section: cues[index].id,
+        sectionProgress: clamp((whole - starts[index]) / duration(index)),
+      })
 
       if (time >= presentationSeconds) {
         finished = true
@@ -131,5 +158,5 @@ export function usePresentation() {
     setPlaying(!playing)
   }
 
-  return { playing, second, toggle, pause: () => setPlaying(false) }
+  return { playing, second: playback?.second ?? null, playback, toggle, pause: () => setPlaying(false) }
 }
