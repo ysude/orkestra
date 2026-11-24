@@ -6,6 +6,7 @@ export function BuildingCase() {
     <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">Problem · Konut siteleri · Pompa dairesi</p>
       <h2 id="building-case-title">Üç ayrı alarm, bir bina.</h2>
+      <p className="problem-statement">Konut sitelerinde hidrofor, yangın ve atık su pompaları ayrı kontrolörlerden ayrı alarm verir. Bu alarmları birlikte yorumlayan bir katman yok. Erken işaretler gözden kaçar, öncelik elle belirlenir ve sorun sakinlere su kesintisi, bodrum baskını veya hazır olmayan bir yangın sistemi olarak yansır.</p>
       <div className="building-cards">
         <div className="building-systems">
           <JuryCard title="Hidrofor" icon={<Gauge size={20} />}>
@@ -22,6 +23,7 @@ export function BuildingCase() {
         <div className="building-operations">
           <JuryCard title="Mevcut yaklaşım ve eksikliği" icon={<ClipboardList size={20} />}>
             <p>Ekip eşik alarmlarına, ayrı kontrolör ekranlarına ve periyodik bakıma dayanır. Hangi sistemin öncelikli olduğunu elle değerlendirir.</p>
+            <p><strong>Eksik kalan:</strong> Eşik alarmı sorun büyüdükten sonra gelir ve bir sistemin kararının diğerini nasıl etkilediğini göstermez.</p>
             <p><strong>Sahada soracağız.</strong> Arızayı ilk kim, hangi işaretten fark ediyor?</p>
           </JuryCard>
           <JuryCard title="Ortak kaynaklar" icon={<Network size={20} />}>
@@ -38,6 +40,7 @@ export function DecisionLogic() {
     <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">Yapay zekânın rolü · Sağanak örneği</p>
       <h2 id="decision-logic-title">Her katmanın ayrı bir işi var.</h2>
+      <p className="problem-statement"><strong>Sabit eşiğe göre farkı:</strong> Kural yalnızca sınır aşılınca ve her sistem için ayrı alarm verir. Yapay zekâ binaya özgü normali öğrenip sapmayı daha erken yakalar, öneriyi uygulamadan önce dijital ikizde dener ve üç sistemin bulgusunu tek bir önceliğe çevirir. Son karar yetkili kişide kalır.</p>
       <div className="jury-grid decision-visuals">
         <JuryCard title="Pompa ajanı · Erken uyarı">
           <p>Model binanın normalini öğrenir. Sabit eşiğe göre, sıklaşan jokey çalışması veya değişen kuyu dolma hızı gibi erken sapmaları arar.</p>

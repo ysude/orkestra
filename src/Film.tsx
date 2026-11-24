@@ -94,6 +94,7 @@ function Opening() {
       <p className="opening-subtitle">Bir binanın suyla geçen günü.</p>
       <div className="opening-meta">
         <div><span>Takım</span><strong>Prometheus</strong></div>
+        <div><span>Çalışma alanı</span><strong>Bina pompa sistemleri</strong></div>
         <a className="opening-link" href="#ihtiyac">Mahalleye in <ArrowDown size={18} /></a>
         <TiltToggle />
       </div>

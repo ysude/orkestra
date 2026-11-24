@@ -2,6 +2,14 @@
 
 Prometheus takımının Water AI Hackathon projesi. Orkestra, farklı pompa sistemlerinin ölçümlerini bina ölçeğinde birleştiren bir yönetim konsepti. Sunumdaki olaylar, ölçümler, asistan yanıtları ve bildirimler temsilidir.
 
+## Künye
+
+| Alan | Bilgi |
+| --- | --- |
+| Proje adı | Orkestra |
+| Takım adı | Prometheus |
+| Çalışma alanı | Bina pompa sistemleri |
+
 ## Takım
 
 | Üye | Rol |
@@ -32,6 +40,10 @@ docker run --rm -p 127.0.0.1:8080:80 orkestra
 
 Sunumu http://localhost:8080 adresinden açın. İmaj, Node.js 22 ile derlenen statik dosyaları Nginx üzerinden sunar.
 
+## GitHub Pages
+
+`main` dalına her push'ta `.github/workflows/pages.yml` projeyi derleyip GitHub Pages'e yayınlar; Actions sekmesinden elle de çalıştırılabilir. İlk kurulumda depo ayarlarında **Settings → Pages → Source: GitHub Actions** seçilmelidir. Sunum https://ysude.github.io/wilo/ adresinde açılır.
+
 ## 150 saniyelik jüri akışı
 
 Sunumu oynat, açılışı geçip doğrudan mahalleye iner ve pilot ekranının sonuna kadar ilerler. Sunumu duraklatıp kaydırabilir veya üst menüden ilgili bölüme geçebilirsiniz. Baştan oynat, kapanıştan sonra sunumu mahalleden yeniden başlatır.
@@ -53,13 +65,13 @@ Sunumu oynat, açılışı geçip doğrudan mahalleye iner ve pilot ekranının 
 
 | Soru | Sahne |
 | --- | --- |
-| Problem | Sabit problem sahnesinde üç sistemin riskleri, ortak kaynaklar ve Wilo drenaj rehberi |
+| Problem | Problem tanımı (ayrı alarmlar, ortak yorum katmanı yok, sakine yansıyan sonuç), üç sistemin riskleri, ortak kaynaklar ve Wilo drenaj rehberi |
 | Hedef kullanıcı ve ihtiyaç | Uyarıyı önceliklendiren yönetici ve ilk saha kontrolünü seçen teknisyen |
-| Mevcut yaklaşım ve eksikliği | Ayrı cihaz alarmlarını ve ekranlarını elle karşılaştırma |
-| Çözüm | Olay anında webde öncelik ve ölçüme dayalı kontrol önerisi, sakine mobil bilgi |
-| Yapay zekânın rolü | Sabit model sahnesinde anomali tespiti, dijital ikiz, şef koordinasyonu ve LLM açıklaması |
+| Mevcut yaklaşım ve eksikliği | Ayrı cihaz alarmlarını ve ekranlarını elle karşılaştırma. Eksik kalan: eşik alarmı geç gelir ve sistemler arası etkiyi göstermez |
+| Çözüm | Olay anında webde öncelik ve ölçüme dayalı kontrol önerisi, sakine mobil bilgi. Bu sayede tek öncelik listesi ve doğru kontrol listesiyle saha ziyareti |
+| Yapay zekânın rolü | Sabit eşiğe göre farkı, anomali tespiti, dijital ikiz, şef koordinasyonu ve LLM açıklaması. Son karar yetkili kişide |
 | Veri ve uygulanabilirlik | Temsili kayıtlar mevcut, zaman damgalı saha geçmişi ve yetkili Wilo erişimi doğrulanacak |
-| Beklenen su etkisi | Bina başına aylık plansız pompa olayı |
+| Beklenen su etkisi | Bina başına aylık plansız pompa olayı. Daha kısa kesinti, daha az taşma ve baskın, korunan yangın rezervi |
 | İlk test | Eğitim dışında tutulan 30 senaryoda üç yöntem, erken uyarı ve yangın rezervi kontrolü |
 
 Mahalle, geniş bir Canvas kompozisyonu olarak çizilir. Ajanlar aynı bina kesitinde tanıtılır. Her pompa odası değerlendirmesinden sonra kamera uygulamaya döner. Tahliye 43. saniyede, hidrofor desteği 70. saniyede ve yangın alarmı iletimi 99. saniyede başlar. Hareket azaltma tercihinde uygulama sonuçları aynı ekipman üzerinde sabit olarak gösterilir.
