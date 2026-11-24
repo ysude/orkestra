@@ -3,7 +3,7 @@ import { JuryCard } from './JuryCard'
 
 export function BuildingCase() {
   return <section className="section fixed-screen static-beat building-case" id="bina-sorunu" aria-labelledby="building-case-title">
-    <div className="shell story-panel">
+    <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">Problem · Konut siteleri · Pompa dairesi</p>
       <h2 id="building-case-title">Üç ayrı alarm, bir bina.</h2>
       <div className="building-cards">
@@ -29,13 +29,13 @@ export function BuildingCase() {
           </JuryCard>
         </div>
       </div>
-    </div>
+    </div></div>
   </section>
 }
 
 export function DecisionLogic() {
   return <section className="section fixed-screen static-beat decision-logic" id="yapay-zeka" aria-labelledby="decision-logic-title">
-    <div className="shell story-panel">
+    <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">Yapay zekânın rolü · Sağanak örneği</p>
       <h2 id="decision-logic-title">Her katmanın ayrı bir işi var.</h2>
       <div className="jury-grid decision-visuals">
@@ -78,6 +78,6 @@ export function DecisionLogic() {
           </div>
         </JuryCard>
       </div>
-    </div>
+    </div></div>
   </section>
 }

@@ -112,6 +112,7 @@
   will-change: transform;
 }
 .incident-plate canvas { display: block; width: 100%; height: auto; }
+.incident-plate[data-layer] { pointer-events: none; }
 .incident-story { z-index: 1; position: relative; pointer-events: none; }
 .incident-story .story-panel[data-visible], .static-caption, .scene-source { pointer-events: auto; }
 .scene-source { justify-self: start; color: #1a6256; font-size: .8rem; text-decoration: underline; text-underline-offset: 2px; }
@@ -446,6 +447,7 @@
   .motion-reading { gap: 3px 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .incident-plate[data-layer] { display: none; }
   .incident-story { pointer-events: auto; }
   .story-panel { visibility: visible; opacity: 1; translate: none; }
   .incident { display: block; background: #eaf3ee; }
@@ -470,4 +472,53 @@
   .still-scene { display: block; width: auto; max-width: 100%; max-height: 52svh; height: auto; }
   .action-live, .action-replay { display: none; }
   .static-result { display: block; }
+}
+
+/* Lenis drives scrolling; the browser's own smooth scroll would fight it. */
+html.lenis { scroll-behavior: auto; }
+
+/* Scene mood: the canvas sets html[data-scene] as the day moves on. */
+@property --scene-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #096756;
+}
+:root { --scene-accent: #096756; transition: --scene-accent .9s ease; }
+:root[data-scene="rain"] { --scene-accent: #2f5f78; }
+:root[data-scene="clear"] { --scene-accent: #1f6390; }
+:root[data-scene="alarm"] { --scene-accent: #a2402f; }
+
+.site-header { box-shadow: inset 0 -3px 0 var(--scene-accent); }
+.presentation-toggle { background: var(--scene-accent); border-color: var(--scene-accent); }
+.presentation-toggle:hover { background: color-mix(in srgb, var(--scene-accent), #000 22%); }
+.incident .signal { background: var(--scene-accent); }
+.scene-caption, .illustrated-card { border-top: 3px solid var(--scene-accent); }
+
+/* Dwell: a pinned beat holds its card while the page scrolls through extra room. */
+:root { --header-height: 68px; --dwell: 55svh; }
+.beat-pin { display: contents; }
+@media (prefers-reduced-motion: no-preference) {
+  .incident [data-dwell] {
+    display: block;
+    min-height: calc(100svh - var(--header-height) + var(--dwell));
+    padding-block: 0;
+  }
+  .incident [data-dwell] > .beat-pin {
+    position: sticky;
+    top: var(--header-height);
+    display: grid;
+    min-height: calc(100svh - var(--header-height));
+    align-items: center;
+    padding-block: var(--pin-padding);
+  }
+  .incident .fixed-screen[data-dwell] { --pin-padding: clamp(28px, 6svh, 78px); }
+  .incident .illustrated-beat[data-dwell] { --pin-padding: 18px; }
+  .incident .illustrated-beat[data-dwell] > .beat-pin { justify-items: start; }
+  .incident .action-right[data-dwell] > .beat-pin { justify-items: end; }
+}
+@media (max-width: 767px) {
+  :root { --header-height: 60px; --dwell: 45svh; }
+  .incident .illustrated-beat[data-dwell] { --pin-padding: 16px 24px; }
+  .incident .illustrated-beat[data-dwell] > .beat-pin,
+  .incident .action-right[data-dwell] > .beat-pin { align-items: end; justify-items: center; }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { onFrame, reducedMotion, scrollToY } from './motion'
 import { cues, presentationSeconds } from './story'
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
@@ -23,7 +24,7 @@ export function usePresentation() {
     if (!playing) return
 
     let positions = measure()
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const reduced = reducedMotion
     const prior = checkpoint.current
     const scroll = window.scrollY
     const current = Math.max(0, positions.findLastIndex((position) => position.start <= scroll + 5))
@@ -38,9 +39,10 @@ export function usePresentation() {
     const initial = resume >= presentationSeconds ? 0 : resume
     const started = performance.now()
     const wallStarted = Date.now()
-    let frame = 0
+    let finished = false
 
     function advance(now: number) {
+      if (finished) return
       const elapsed = Math.max(0, now - started, Date.now() - wallStarted)
       const time = Math.min(presentationSeconds, initial + elapsed / 1000)
       const index = cues.findLastIndex((entry) => entry.start <= time)
@@ -54,14 +56,16 @@ export function usePresentation() {
       const goal = transitioning
         ? previous.start + previous.travel + (location.start - previous.start - previous.travel) * ease(clamp(since / 1.75))
         : location.start + (reduced.matches ? 0 : location.travel * ease(clamp((since - 1.75) / Math.max(1, duration - 3.75))))
-      if (Math.abs(window.scrollY - goal) >= 1) window.scrollTo({ top: goal, behavior: 'instant' })
+      if (Math.abs(window.scrollY - goal) >= 1) scrollToY(goal)
 
       checkpoint.current = { time, scroll: window.scrollY, transitioning: Boolean(transitioning) }
       const whole = Math.floor(time)
       setSecond((previousSecond) => previousSecond === whole ? previousSecond : whole)
 
-      if (time < presentationSeconds) frame = requestAnimationFrame(advance)
-      else setPlaying(false)
+      if (time >= presentationSeconds) {
+        finished = true
+        setPlaying(false)
+      }
     }
 
     function pause() { setPlaying(false) }
@@ -82,14 +86,14 @@ export function usePresentation() {
       const section = document.getElementById(id)
       if (section) layout.observe(section)
     }
-    frame = requestAnimationFrame(advance)
+    const stop = onFrame(advance, 1)
     window.addEventListener('wheel', pause, { passive: true })
     window.addEventListener('pointerdown', pauseOnPointer)
     window.addEventListener('keydown', pauseOnKey)
     window.addEventListener('resize', resize)
     return () => {
       layout.disconnect()
-      cancelAnimationFrame(frame)
+      stop()
       window.removeEventListener('wheel', pause)
       window.removeEventListener('pointerdown', pauseOnPointer)
       window.removeEventListener('keydown', pauseOnKey)
@@ -99,7 +103,7 @@ export function usePresentation() {
 
   function toggle() {
     if (playing) {
-      window.scrollTo({ top: checkpoint.current.scroll, behavior: 'instant' })
+      scrollToY(checkpoint.current.scroll)
     }
     setPlaying(!playing)
   }

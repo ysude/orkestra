@@ -3,8 +3,9 @@ import type { CSSProperties, ReactNode } from 'react'
 import { ArrowDown, Building2, Diamond, Flame, Gauge, GitMerge, RotateCcw, Waves } from 'lucide-react'
 import { pumps } from './content'
 import { BuildingCase } from './JuryEvidence'
-import { drawNeighborhood, sceneHeight, sceneOffsetX, sceneWidth } from './Neighborhood'
-import type { Neighborhood } from './Neighborhood'
+import { glide, lowPower, onFrame, pace, reducedMotion, scrollToElement } from './motion'
+import { depthLayers, drawNeighborhood, sceneHeight, sceneOffsetX, sceneWidth } from './Neighborhood'
+import type { DepthLayer, Neighborhood } from './Neighborhood'
 import { cues, scenarios } from './story'
 import type { CameraPoint } from './story'
 
@@ -20,6 +21,14 @@ const closingCameras: Partial<Record<string, CameraPoint>> = {
   pilot: [1065, 421, .92, [520, 183, 1535, 756]],
 }
 const sceneResolution = .9
+const layerNames = Object.keys(depthLayers) as DepthLayer[]
+// A Blok's centre: depth layers line up with the main drawing when it is centred.
+const parallaxAnchor = 781 + sceneOffsetX
+const closingBeat = cues.findIndex(({ id }) => id === 'yapay-zeka') - 1
+
+// The scene reports its mood to the page so the interface follows the story.
+type SceneMood = 'calm' | 'rain' | 'clear' | 'alarm'
+const browserColors: Record<SceneMood, string> = { calm: '#14363a', rain: '#2f5367', clear: '#1f5f86', alarm: '#8f3a2b' }
 const actionDuration = 4200
 const agentRoles = {
   fire: { title: 'Yangın ajanı', text: 'Hazırlık ve alarm durumunu salt okunur izler. Yerel yangın paneli kendi kontrolünü sürdürür.' },
@@ -108,7 +117,7 @@ function StillScene({ event }: { event?: Event }) {
 function AgentIntroduction() {
   return <section className="illustrated-beat agent-introduction" id="ajanlar" aria-labelledby="agents-title" data-caption-side="left">
     <StillScene />
-    <div className="story-panel illustrated-card intro-card">
+    <div className="beat-pin"><div className="story-panel illustrated-card intro-card">
       <p className="eyebrow">A Blok · Pompa odası</p>
       <h2 id="agents-title">Dört ajan, tek bina.</h2>
       <div className="intro-systems">
@@ -121,7 +130,7 @@ function AgentIntroduction() {
         })}
         <article data-pump="chief"><h3><Diamond size={17} />Şef ajan</h3><p>Ölçümleri birleştirir, görevleri ilgili ajana iletir ve sonucu takip eder.</p></article>
       </div>
-    </div>
+    </div></div>
   </section>
 }
 
@@ -132,7 +141,7 @@ function ActionScene({ event, phase, replay }: { event: Event; phase: number; re
 
   return <section className={'illustrated-beat action-scene action-' + side} id={execution.id} aria-labelledby={execution.id + '-title'} data-caption-side={side} data-phase={phase}>
     <StillScene event={event} />
-    <div className="story-panel illustrated-card action-card motion-copy">
+    <div className="beat-pin"><div className="story-panel illustrated-card action-card motion-copy">
       <div>
         <p className="eyebrow">Şef → {agentRoles[event.key].title} · Dijital ikiz</p>
         <h2 id={execution.id + '-title'}>{execution.title}</h2>
@@ -145,7 +154,7 @@ function ActionScene({ event, phase, replay }: { event: Event; phase: number; re
         <strong className="static-result">{execution.after}</strong>
       </div>
       <button type="button" className="action-replay" onClick={replay}><RotateCcw size={15} /> Tekrar oynat</button>
-    </div>
+    </div></div>
   </section>
 }
 
@@ -164,7 +173,7 @@ function Decision({ event }: { event: Event }) {
   }, [])
 
   return <section ref={chapter} className="section fixed-screen decision-screen" id={event.decisionId} aria-labelledby={event.decisionId + '-title'}>
-    <div className="shell story-panel">
+    <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">{event.label} · Pompa odası · Örnek veri</p>
       <h2 id={event.decisionId + '-title'}>Şef ajan neye dayanıyor?</h2>
       <div className="pump-network">
@@ -187,7 +196,7 @@ function Decision({ event }: { event: Event }) {
         <strong>{event.action}</strong>
         <p>{event.reason}</p>
       </article>
-    </div>
+    </div></div>
   </section>
 }
 
@@ -208,6 +217,13 @@ function IncidentNote({ event }: { event: Event }) {
   </div>
 }
 
+function DepthPlate({ name, plate, canvas }: { name: DepthLayer; plate: (node: HTMLDivElement | null) => void; canvas: (node: HTMLCanvasElement | null) => void }) {
+  const { resolution } = depthLayers[name]
+  return <div className="incident-plate" data-layer={name} style={{ '--world-width': sceneWidth + 'px' } as CSSProperties} ref={plate}>
+    <canvas ref={canvas} width={sceneWidth * resolution} height={sceneHeight * resolution} aria-hidden="true" />
+  </div>
+}
+
 function Incident({ playing, children }: { playing: boolean; children: ReactNode }) {
   const section = useRef<HTMLDivElement>(null)
   const stage = useRef<HTMLDivElement>(null)
@@ -215,6 +231,9 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
   const plate = useRef<HTMLDivElement>(null)
   const captions = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
+  const layerPlates = useRef<Partial<Record<DepthLayer, HTMLDivElement | null>>>({})
+  const layerCanvases = useRef<Partial<Record<DepthLayer, HTMLCanvasElement | null>>>({})
+  const [layered] = useState(() => !lowPower)
   const presentationPlaying = useRef(playing)
   const restart = useRef<string | null>(null)
   const [actionPhases, setActionPhases] = useState(() => scenarios.map(() => 0))
@@ -230,6 +249,19 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
     const context = canvas.current?.getContext('2d')
     if (!root || !graphic || !view || !drawing || !captionRail || !context) return
     context.setTransform(sceneResolution, 0, 0, sceneResolution, 0, 0)
+    const layerContexts: Partial<Record<DepthLayer, CanvasRenderingContext2D>> = {}
+    for (const name of layerNames) {
+      const layer = layerCanvases.current[name]?.getContext('2d')
+      if (!layer) continue
+      const { resolution } = depthLayers[name]
+      layer.setTransform(resolution, 0, 0, resolution, 0, 0)
+      layerContexts[name] = layer
+    }
+    const hasLayers = Object.keys(layerContexts).length > 0
+    const keepMid = new Set<DepthLayer>(['mid'])
+    let midReady = false
+    let mood: SceneMood | null = null
+    const browserColor = document.querySelector('meta[name="theme-color"]')
 
     const notes = scenarios.map((event) => document.getElementById(event.id))
     const intro = document.getElementById('ajanlar')
@@ -249,15 +281,34 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
         still: node?.classList.contains('static-beat') ?? false,
       }
     })
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const reduced = reducedMotion
     const stacked = window.matchMedia('(max-width: 767px)')
-    let frame = 0
+
+    // Beats whose card fits on screen get extra scroll room with the card pinned,
+    // so the story holds still for a moment before the next change.
+    const pinned = beats.flatMap(({ node, panel }) => {
+      const pin = node?.querySelector(':scope > .beat-pin')
+      return node && pin && panel instanceof HTMLElement ? [{ node, panel }] : []
+    })
+    function updateDwell() {
+      const header = document.querySelector('header')?.offsetHeight ?? 0
+      const room = window.innerHeight - header - 2 * pace.dwellRoom
+      for (const { node, panel } of pinned) {
+        node.toggleAttribute('data-dwell', !reduced.matches && panel.offsetHeight <= room)
+      }
+      needsDraw = true
+    }
+    const panelSizes = new ResizeObserver(updateDwell)
+    for (const { panel } of pinned) panelSizes.observe(panel)
     let visible = false
     let lastDraw = -Infinity
     let needsDraw = true
     let displayedBeat = -1
     let panelOpacity = 0
     let rendered: [number, number, number] | null = null
+    let cameraVelocity: [number, number, number] = [0, 0, 0]
+    let cameraArrived = true
+    let cardWaitStarted = 0
     let actionIndex = -1
     let phase = 0
     let elapsed = 0
@@ -266,7 +317,7 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
     let weatherState: [number, number, number] | undefined
 
     function draw(time: number) {
-      frame = 0
+      if (!needsDraw && (!visible || reduced.matches)) return
       if (!graphic || !context || !view || !drawing || !captionRail) return
       if (needsDraw || time - lastDraw >= 27 || time < lastDraw || reduced.matches) {
         const header = document.querySelector('header')?.offsetHeight ?? 0
@@ -280,12 +331,17 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
         })
         const desiredBeat = edges.findIndex((edge) => edge >= 0)
         const desiredOpacity = desiredBeat < 0 ? 0
-          : ease(clamp((edges[desiredBeat] - viewport * .035) / Math.min(130, viewport * .24)))
+          : ease(clamp((edges[desiredBeat] - viewport * .035) / (viewport * pace.cardFadeDistance)))
 
         if (!reduced.matches) {
-          if (panelOpacity === 0) displayedBeat = desiredBeat
-          const target = displayedBeat === desiredBeat ? desiredOpacity : 0
-          const step = Math.min(45, Math.max(0, delta)) / (target < panelOpacity ? 165 : 265)
+          if (panelOpacity === 0 && displayedBeat !== desiredBeat) {
+            displayedBeat = desiredBeat
+            cardWaitStarted = time
+          }
+          // A new card waits until the camera has reached its subject.
+          const cameraReady = panelOpacity > 0 || cameraArrived || time - cardWaitStarted > pace.cardWaitMax
+          const target = displayedBeat === desiredBeat && cameraReady ? desiredOpacity : 0
+          const step = Math.min(45, Math.max(0, delta)) / (target < panelOpacity ? pace.cardOut : pace.cardIn)
           panelOpacity += Math.sign(target - panelOpacity) * Math.min(Math.abs(target - panelOpacity), step)
         }
         beats.forEach(({ panel }, index) => {
@@ -342,6 +398,7 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
         const [x, y, zoom, [left, top, right, bottom]] = camera
         if (reduced.matches) {
           drawing.style.transform = ''
+          for (const name of layerNames) layerPlates.current[name]?.style.removeProperty('transform')
           rendered = null
         } else {
           const bounds = view.getBoundingClientRect()
@@ -362,15 +419,27 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
           )
           const translateX = frameAxis(x + sceneOffsetX, left + sceneOffsetX, right + sceneOffsetX, safeLeft, safeRight, width, sceneWidth, scale, inset)
           const translateY = frameAxis(y, top, bottom, 0, safeBottom, height, sceneHeight, scale, inset)
-          const blend = 1 - Math.exp(-Math.max(0, delta) / 220)
-          rendered = rendered
-            ? [
-              rendered[0] + (translateX - rendered[0]) * blend,
-              rendered[1] + (translateY - rendered[1]) * blend,
-              rendered[2] + (scale - rendered[2]) * blend,
-            ]
-            : [translateX, translateY, scale]
-          drawing.style.transform = 'translate3d(' + rendered[0] + 'px,' + rendered[1] + 'px,0) scale(' + rendered[2] + ')'
+          const goal: [number, number, number] = [translateX, translateY, scale]
+          if (rendered) {
+            const seconds = Math.min(.05, Math.max(0, delta) / 1000)
+            const previous = rendered
+            const moved = goal.map((value, axis) => glide(previous[axis], value, cameraVelocity[axis], pace.cameraSmoothing, seconds))
+            rendered = [moved[0][0], moved[1][0], moved[2][0]]
+            cameraVelocity = [moved[0][1], moved[1][1], moved[2][1]]
+          } else rendered = goal
+          // Distance left, in screen pixels, including what the zoom still has to do.
+          const remaining = Math.hypot(goal[0] - rendered[0], goal[1] - rendered[1]) + Math.abs(goal[2] - rendered[2]) * width
+          cameraArrived = remaining < pace.cameraSettled
+          const [renderedX, renderedY, renderedScale] = rendered
+          drawing.style.transform = 'translate3d(' + renderedX + 'px,' + renderedY + 'px,0) scale(' + renderedScale + ')'
+          // Layers further back trail the camera, the rain layer leads it.
+          const centre = (width / 2 - renderedX) / renderedScale
+          for (const name of layerNames) {
+            const layerPlate = layerPlates.current[name]
+            if (!layerPlate) continue
+            const shift = (centre - parallaxAnchor) * (1 - depthLayers[name].parallax) * renderedScale
+            layerPlate.style.transform = 'translate3d(' + (renderedX + shift) + 'px,' + renderedY + 'px,0) scale(' + renderedScale + ')'
+          }
         }
 
         const visualAction = scenarios[actionCamera]
@@ -388,13 +457,20 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
             if (drawingAction.reveal === 0) drawingAction = undefined
           }
         }
-        const weatherBlend = 1 - Math.exp(-Math.max(0, delta) / 165)
+        const weatherBlend = 1 - Math.exp(-Math.max(0, delta) / pace.weather)
         weatherState = [
           (weatherState?.[0] ?? progress[0]) * (1 - weatherBlend) + progress[0] * weatherBlend,
           (weatherState?.[1] ?? progress[1]) * (1 - weatherBlend) + progress[1] * weatherBlend,
           (weatherState?.[2] ?? progress[2]) * (1 - weatherBlend) + progress[2] * weatherBlend,
         ]
         const [rain, clear, dusk] = weatherState
+        const nextMood: SceneMood = desiredBeat < 0 || desiredBeat >= closingBeat ? 'calm'
+          : dusk > .45 ? 'alarm' : clear > .45 ? 'clear' : rain > .45 ? 'rain' : 'calm'
+        if (nextMood !== mood) {
+          mood = nextMood
+          document.documentElement.dataset.scene = mood
+          browserColor?.setAttribute('content', browserColors[mood])
+        }
         const state: Neighborhood = { rain, clear, dusk, time: time / 1000, moving: focus < .999 || !shown?.still }
         const afterDrainage = actions[0] && distance(actions[0]) < -actions[0].offsetHeight * .25
         state.drained = Boolean(afterDrainage)
@@ -402,19 +478,20 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
         state.supported = Boolean(afterSupport)
         state.introduce = shown?.node === intro ? ease(panelOpacity) : 0
         state.action = drawingAction
-        drawNeighborhood(context, reduced.matches
-          ? { rain: 0, clear: 0, dusk: 0, time: 0, moving: false }
-          : state)
+        if (reduced.matches) drawNeighborhood(context, { rain: 0, clear: 0, dusk: 0, time: 0, moving: false })
+        else if (hasLayers) {
+          // The neighbouring blocks never change, so the mid layer is drawn once.
+          drawNeighborhood({ main: context, ...layerContexts, keep: midReady ? keepMid : undefined }, state)
+          midReady = true
+        } else drawNeighborhood(context, state)
         graphic.style.setProperty('--focus', String(focus))
         needsDraw = false
         lastDraw = time
       }
-      if (visible && !reduced.matches) frame = requestAnimationFrame(draw)
     }
 
     function refresh() {
       needsDraw = true
-      if (!frame) frame = requestAnimationFrame(draw)
     }
 
     const observer = new IntersectionObserver(([entry]) => {
@@ -424,12 +501,19 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
     observer.observe(root)
     window.addEventListener('scroll', refresh, { passive: true })
     window.addEventListener('resize', refresh)
+    window.addEventListener('resize', updateDwell)
     reduced.addEventListener('change', refresh)
-    frame = requestAnimationFrame(draw)
+    reduced.addEventListener('change', updateDwell)
+    const stop = onFrame(draw, 2)
 
     return () => {
       observer.disconnect()
-      cancelAnimationFrame(frame)
+      panelSizes.disconnect()
+      window.removeEventListener('resize', updateDwell)
+      reduced.removeEventListener('change', updateDwell)
+      stop()
+      delete document.documentElement.dataset.scene
+      browserColor?.setAttribute('content', browserColors.calm)
       window.removeEventListener('scroll', refresh)
       window.removeEventListener('resize', refresh)
       reduced.removeEventListener('change', refresh)
@@ -440,9 +524,13 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
     <div className="incident-stage" ref={stage}>
       <div className="incident-viewfinder" ref={viewfinder} role="img"
         aria-label="Sokak, komşu binalar, park, araçlar ve A Blok’un üç pompalı bodrumunu gösteren mahalle kesiti">
+        {layered && layerNames.filter((name) => name !== 'front').map((name) => <DepthPlate key={name} name={name}
+          plate={(node) => { layerPlates.current[name] = node }} canvas={(node) => { layerCanvases.current[name] = node }} />)}
         <div className="incident-plate" style={{ '--world-width': sceneWidth + 'px' } as CSSProperties} ref={plate}>
           <canvas ref={canvas} width={sceneWidth * sceneResolution} height={sceneHeight * sceneResolution} aria-hidden="true" />
         </div>
+        {layered && <DepthPlate name="front"
+          plate={(node) => { layerPlates.current.front = node }} canvas={(node) => { layerCanvases.current.front = node }} />}
       </div>
       <div className="scene-captions" ref={captions}>
         <div className="story-panel scene-caption caption-overview"><Context /></div>
@@ -463,7 +551,8 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
         <ActionScene event={event} phase={actionPhases[index]}
           replay={() => {
             restart.current = event.execution.id
-            document.getElementById(event.execution.id)?.scrollIntoView({ block: 'start', behavior: 'instant' })
+            const scene = document.getElementById(event.execution.id)
+            if (scene) scrollToElement(scene, true)
           }} />
       </div>)}
       {children}
