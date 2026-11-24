@@ -1,5 +1,8 @@
-import { ArrowRight, ClipboardList, Database, Diamond, Flame, Gauge, Network, Waves } from 'lucide-react'
+import { ArrowRight, Building2, ClipboardList, Database, Diamond, Flame, Gauge, Landmark, Network, Waves, Wrench } from 'lucide-react'
+import { interviews } from './content'
 import { JuryCard } from './JuryCard'
+
+const interviewIcons = { yonetici: Building2, teknisyen: Wrench, idare: Landmark }
 
 export function BuildingCase() {
   return <section className="section fixed-screen static-beat building-case" id="bina-sorunu" aria-labelledby="building-case-title">
@@ -28,6 +31,22 @@ export function BuildingCase() {
           <JuryCard title="Ortak kaynaklar" icon={<Network size={20} />}>
             <p>Ortak depo veya jeneratör olan binalarda bir sistemin kararı diğerini etkileyebilir. Kaynak çakışmalarını bina ekibi yönetir.</p>
           </JuryCard>
+        </div>
+        <div className="building-voices" role="group" aria-labelledby="building-voices-title">
+          <p className="building-voices-title" id="building-voices-title">Sahadan sesler · Saha görüşmeleri · İsimler değiştirildi</p>
+          <div className="building-voices-grid">
+            {interviews.map((person) => {
+              const Icon = interviewIcons[person.id]
+              return <figure key={person.id} className="jury-card voice-card" data-voice={person.id}>
+                <figcaption>
+                  <span className="jury-card-icon" aria-hidden="true"><Icon size={18} /></span>
+                  <span><strong>{person.name} · {person.role}</strong><small>{person.context}</small></span>
+                </figcaption>
+                <blockquote>“{person.quote}”</blockquote>
+                <p className="voice-finding">{person.finding}</p>
+              </figure>
+            })}
+          </div>
         </div>
       </div>
     </div></div>

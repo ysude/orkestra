@@ -112,25 +112,25 @@ export const scenarios: Scenario[] = [
   },
 ]
 
-export const presentationSeconds = 150
-export const roleViewsStart = 115
-export const pilotStart = 131
+export const presentationSeconds = 158
+export const roleViewsStart = 123
+export const pilotStart = 139
 
 export const cues: { id: string; start: number; label: string; motion?: boolean }[] = [
   { id: 'baslangic', start: 0, label: 'Başlangıç' },
   { id: 'ihtiyac', start: 1, label: 'Günün başlangıcı' },
   { id: 'bina-sorunu', start: 8, label: 'Problem', motion: true },
-  { id: 'ajanlar', start: 17, label: 'Dört ajan' },
-  { id: scenarios[0].id, start: 23, label: 'Sağanak', motion: true },
-  { id: scenarios[0].decisionId, start: 37, label: 'Şefin kararı' },
-  { id: scenarios[0].execution.id, start: 43, label: 'Tahliye' },
-  { id: scenarios[1].id, start: 50, label: 'Eve dönüş', motion: true },
-  { id: scenarios[1].decisionId, start: 64, label: 'Şefin kararı' },
-  { id: scenarios[1].execution.id, start: 70, label: 'Basınç desteği' },
-  { id: scenarios[2].id, start: 77, label: 'Akşam alarmı', motion: true },
-  { id: scenarios[2].decisionId, start: 93, label: 'Şefin kararı' },
-  { id: scenarios[2].execution.id, start: 99, label: 'Alarm iletimi' },
-  { id: 'yapay-zeka', start: 106, label: 'Yapay zekânın rolü', motion: true },
+  { id: 'ajanlar', start: 25, label: 'Dört ajan' },
+  { id: scenarios[0].id, start: 31, label: 'Sağanak', motion: true },
+  { id: scenarios[0].decisionId, start: 45, label: 'Şefin kararı' },
+  { id: scenarios[0].execution.id, start: 51, label: 'Tahliye' },
+  { id: scenarios[1].id, start: 58, label: 'Eve dönüş', motion: true },
+  { id: scenarios[1].decisionId, start: 72, label: 'Şefin kararı' },
+  { id: scenarios[1].execution.id, start: 78, label: 'Basınç desteği' },
+  { id: scenarios[2].id, start: 85, label: 'Akşam alarmı', motion: true },
+  { id: scenarios[2].decisionId, start: 101, label: 'Şefin kararı' },
+  { id: scenarios[2].execution.id, start: 107, label: 'Alarm iletimi' },
+  { id: 'yapay-zeka', start: 114, label: 'Yapay zekânın rolü', motion: true },
   { id: 'gorunumler', start: roleViewsStart, label: 'Arayüzler', motion: true },
   { id: 'pilot', start: pilotStart, label: 'Pilot', motion: true },
 ]

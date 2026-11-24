@@ -49,3 +49,21 @@ export const team = [
   { name: 'Sude Yıldırım', role: 'Frontend / Mobil' },
   { name: 'Bilge Bostanbaşı', role: 'Mobil / Frontend' },
 ]
+
+export const interviews = [
+  {
+    id: 'yonetici', name: 'Ayşe', role: 'Site yöneticisi', context: 'İstanbul · 120 daireli site',
+    quote: 'Hidroforun bozulduğunu genelde sakinlerin WhatsApp grubundan öğreniyorum. Üç sistemin üç ayrı servisi var. Hangisine önce bakılacağına ben karar vermek zorundayım.',
+    finding: 'Arıza sakin şikâyetiyle fark ediliyor, önceliği belirleyen yok.',
+  },
+  {
+    id: 'teknisyen', name: 'Murat', role: 'Pompa bakım teknisyeni', context: 'Yetkili servis · Haftada 15+ bina',
+    quote: 'Sahaya ne bulacağımı bilmeden gidiyorum. Şamandıra arızası çoğu zaman bodrum su dolunca anlaşılıyor. Jokey pompasının sık çalıştığını da kimse fark etmiyor.',
+    finding: 'Teknisyenin elinde ölçüm geçmişi yok, erken işaretler kaçıyor.',
+  },
+  {
+    id: 'idare', name: 'Kemal', role: 'Su idaresi saha sorumlusu', context: 'Sağanakta bodrum baskını çağrıları',
+    quote: 'Sağanakta gelen bodrum baskını çağrılarının önemli kısmında sorun binanın kendi pompasında. Bakımı yapılmamış ya da şamandırası takılı kalmış.',
+    finding: 'Bina içindeki pompa arızası kamu ekiplerine yük oluyor.',
+  },
+] as const
