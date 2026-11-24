@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { ArrowDown, Building2, Diamond, Flame, Gauge, GitMerge, RotateCcw, Waves } from 'lucide-react'
+import { ArrowDown, Building2, ChevronsDown, Diamond, Flame, Gauge, GitMerge, RotateCcw, Waves } from 'lucide-react'
 import { pumps } from './content'
 import { BuildingCase } from './JuryEvidence'
 import { glide, lowPower, onFrame, pace, reducedMotion, scrollToElement } from './motion'
@@ -243,6 +243,8 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
   const layerPlates = useRef<Partial<Record<DepthLayer, HTMLDivElement | null>>>({})
   const layerCanvases = useRef<Partial<Record<DepthLayer, HTMLCanvasElement | null>>>({})
   const [layered] = useState(() => !lowPower)
+  const skip = useRef<HTMLButtonElement>(null)
+  const skipTarget = useRef<HTMLElement | null>(null)
   const presentationPlaying = useRef(playing)
   const restart = useRef<string | null>(null)
   const [actionPhases, setActionPhases] = useState(() => scenarios.map(() => 0))
@@ -339,6 +341,14 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
           return Math.min(reference - top, top + (node?.offsetHeight ?? 0) - reference)
         })
         const desiredBeat = edges.findIndex((edge) => edge >= 0)
+        const upcoming = beats.findIndex(({ node }) => distance(node) > viewport * .12)
+        const upcomingNode = beats[upcoming]?.node ?? null
+        if (skip.current && upcomingNode !== skipTarget.current) {
+          skipTarget.current = upcomingNode
+          const label = skip.current.querySelector('span')
+          if (label) label.textContent = upcomingNode ? 'Sonraki: ' + cues[upcoming + 1].label : ''
+          skip.current.hidden = !upcomingNode
+        }
         const desiredOpacity = desiredBeat < 0 ? 0
           : ease(clamp((edges[desiredBeat] - viewport * .035) / (viewport * pace.cardFadeDistance)))
 
@@ -541,6 +551,10 @@ function Incident({ playing, children }: { playing: boolean; children: ReactNode
         {layered && <DepthPlate name="front"
           plate={(node) => { layerPlates.current.front = node }} canvas={(node) => { layerCanvases.current.front = node }} />}
       </div>
+      <button type="button" className="scene-skip" ref={skip} hidden data-playing={playing || undefined}
+        onClick={() => { if (skipTarget.current) scrollToElement(skipTarget.current) }}>
+        <span /><ChevronsDown size={16} aria-hidden="true" />
+      </button>
       <div className="scene-captions" ref={captions}>
         <div className="story-panel scene-caption caption-overview"><Context /></div>
         {scenarios.map((event) => <div className={'story-panel scene-caption caption-' + event.placement} key={event.id}><IncidentNote event={event} /></div>)}

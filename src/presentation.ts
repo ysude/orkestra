@@ -5,13 +5,33 @@ import { cues, presentationSeconds } from './story'
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const ease = (value: number) => value * value * (3 - 2 * value)
 
+const transition = 2.2 // s gliding from one beat to the next
+const hold = 2         // s held still at the end of a beat that moves
+const settle = .9      // s gliding from where the reader was to where the presentation is
+
+// Inverse of `ease`, to turn a scroll position back into presentation time.
+function unease(value: number) {
+  let low = 0
+  let high = 1
+  for (let step = 0; step < 14; step++) {
+    const middle = (low + high) / 2
+    if (ease(middle) < value) low = middle
+    else high = middle
+  }
+  return (low + high) / 2
+}
+
+const span = (index: number) => Math.max(1, (cues[index + 1]?.start ?? presentationSeconds) - cues[index].start - transition - hold)
+
 function measure() {
   const header = document.querySelector('header')
   const top = header?.getBoundingClientRect().height ?? 0
   return cues.map((cue) => {
     const node = document.getElementById(cue.id)
     const start = node ? node.getBoundingClientRect().top + window.scrollY - top : 0
-    return { start: Math.max(0, start), travel: cue.motion && node ? Math.max(0, node.offsetHeight - window.innerHeight + top) : 0 }
+    // Beats that move, and beats with a pinned card, are scrolled through rather than parked at their top.
+    const moves = node && (cue.motion || node.hasAttribute('data-dwell'))
+    return { start: Math.max(0, start), travel: moves ? Math.max(0, node.offsetHeight - window.innerHeight + top) : 0 }
   })
 }
 
@@ -29,14 +49,15 @@ export function usePresentation() {
     const scroll = window.scrollY
     const current = Math.max(0, positions.findLastIndex((position) => position.start <= scroll + 5))
     const cue = cues[current]
-    const next = cues[current + 1]?.start ?? presentationSeconds
     const motionPosition = positions[current]
     const manualTime = cue.start + (motionPosition.travel > 0
-      ? clamp((scroll - motionPosition.start) / motionPosition.travel) * (next - cue.start - 2)
+      ? transition + unease(clamp((scroll - motionPosition.start) / motionPosition.travel)) * span(current)
       : 0)
     const resumesCheckpoint = Math.abs(prior.scroll - scroll) < 8
     const resume = resumesCheckpoint ? prior.time : manualTime
-    const initial = resume >= presentationSeconds ? 0 : resume
+    // Starting over skips the title and opens straight on the neighbourhood.
+    const restart = resume >= presentationSeconds
+    const initial = restart ? cues[1].start : resume
     const started = performance.now()
     const wallStarted = Date.now()
     let finished = false
@@ -50,12 +71,14 @@ export function usePresentation() {
       const location = positions[index]
       const previous = positions[index - 1]
       const since = time - active.start
-      const duration = (cues[index + 1]?.start ?? presentationSeconds) - active.start
-      const transitioning = since < 1.75 && previous && !reduced.matches &&
+      const transitioning = since < transition && previous && !reduced.matches &&
         (initial < active.start || (resumesCheckpoint && prior.transitioning))
-      const goal = transitioning
-        ? previous.start + previous.travel + (location.start - previous.start - previous.travel) * ease(clamp(since / 1.75))
-        : location.start + (reduced.matches ? 0 : location.travel * ease(clamp((since - 1.75) / Math.max(1, duration - 3.75))))
+      const scheduled = transitioning
+        ? previous.start + previous.travel + (location.start - previous.start - previous.travel) * ease(clamp(since / transition))
+        : location.start + (reduced.matches ? 0 : location.travel * ease(clamp((since - transition) / span(index))))
+      // Starting away from the scheduled spot glides there instead of jumping.
+      const arrival = resumesCheckpoint || restart || reduced.matches ? 1 : ease(clamp(elapsed / 1000 / settle))
+      const goal = scroll + (scheduled - scroll) * arrival
       if (Math.abs(window.scrollY - goal) >= 1) scrollToY(goal)
 
       checkpoint.current = { time, scroll: window.scrollY, transitioning: Boolean(transitioning) }

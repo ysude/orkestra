@@ -26,8 +26,11 @@ function Brand() {
   </a>
 }
 
+const clock = (seconds: number) => Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0')
+
 function Header({ presentation }: { presentation: ReturnType<typeof usePresentation> }) {
   const [open, setOpen] = useState(false)
+  const started = presentation.second !== null && presentation.second < presentationSeconds
 
   function closeMenu() {
     setOpen(false)
@@ -50,9 +53,12 @@ function Header({ presentation }: { presentation: ReturnType<typeof usePresentat
       </nav>
       <button type="button" aria-pressed={presentation.playing} className="presentation-toggle" onClick={presentation.toggle}>
         {presentation.playing ? <Pause size={16} /> : <Play size={16} />}
-        {presentation.playing ? 'Duraklat' : presentation.second === presentationSeconds ? 'Baştan oynat' : 'Sunumu oynat'}
+        {presentation.playing ? 'Duraklat' : presentation.second === presentationSeconds ? 'Baştan oynat' : started ? 'Devam et' : 'Sunumu oynat'}
+        {started && <span className="presentation-time">{clock(presentation.second ?? 0)} / {clock(presentationSeconds)}</span>}
       </button>
     </div>
+    <div className="presentation-progress" hidden={presentation.second === null} aria-hidden="true"
+      style={{ '--progress': (presentation.second ?? 0) / presentationSeconds } as CSSProperties} />
   </header>
 }
 
