@@ -20,6 +20,8 @@ type Scenario = {
   placement: 'left' | 'right' | 'bottom'
   camera: readonly [start: CameraPoint, end: CameraPoint]
   readings: Reading[]
+  // Numeric state of the pump room for the 3D view, matching `readings`.
+  room: { level: number; bar: number; alarm: boolean }
   priority: string
   action: string
   reason: string
@@ -41,6 +43,7 @@ export const scenarios: Scenario[] = [
       { pump: 'pressure', value: '3,4 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Kullanım suyu basıncı olağan.' },
       { pump: 'drainage', value: '%78', baseline: 'Olağan: %35–50', finding: 'Kuyu seviyesi geçmişteki üst sınırı aştı.' },
     ],
+    room: { level: 78, bar: 3.4, alarm: false },
     priority: 'Drenaj incelemesi',
     action: 'Drenaj kaydı aç ve kontrollü tahliye iste.',
     reason: 'Kuyu seviyesi %78’e çıktı. Hidrofor ve yangın paneli olağan durumda.',
@@ -67,6 +70,7 @@ export const scenarios: Scenario[] = [
       { pump: 'pressure', value: '2,6 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Eve dönüş saatinde basınç olağan aralığın altına indi.' },
       { pump: 'drainage', value: '%61', baseline: 'Olağan: %35–50', finding: 'Kuyu geriliyor. Önceki drenaj incelemesi açık.' },
     ],
+    room: { level: 61, bar: 2.6, alarm: false },
     priority: 'Hizmet kontrolü',
     action: 'Hidrofor için geçici basınç desteğini onaya gönder.',
     reason: 'Drenaj toparlanıyor. Üst kat basıncı düşerken diğer pompalarda müdahale gerektiren bir sapma yok.',
@@ -93,6 +97,7 @@ export const scenarios: Scenario[] = [
       { pump: 'pressure', value: '3,3 bar', baseline: 'Olağan: 3,2–3,6 bar', finding: 'Kullanım suyu basıncı olağan aralığa döndü.' },
       { pump: 'drainage', value: '%44', baseline: 'Olağan: %35–50', finding: 'Kuyu seviyesi olağan aralığa döndü.' },
     ],
+    room: { level: 44, bar: 3.3, alarm: true },
     priority: 'Öncelikli bildirim',
     action: 'Yerel yangın alarmını bakım bildirimlerinin önüne al.',
     reason: 'Şef ajan alarmı teknik ekibe yönlendirir. Yangın sisteminin denetimi yerel panelde kalır.',

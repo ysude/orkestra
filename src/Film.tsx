@@ -6,6 +6,7 @@ import { BuildingCase } from './JuryEvidence'
 import { glide, lowPower, onFrame, pace, reducedMotion, scrollToElement } from './motion'
 import { depthLayers, drawNeighborhood, sceneHeight, sceneOffsetX, sceneWidth } from './Neighborhood'
 import type { DepthLayer, Neighborhood } from './Neighborhood'
+import { registerRoomSlot } from './RoomStage'
 import { cues, scenarios } from './story'
 import type { CameraPoint } from './story'
 
@@ -160,6 +161,12 @@ function ActionScene({ event, phase, replay }: { event: Event; phase: number; re
 
 function Decision({ event }: { event: Event }) {
   const chapter = useRef<HTMLElement>(null)
+  const roomSlot = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!roomSlot.current || !chapter.current) return
+    return registerRoomSlot(roomSlot.current, chapter.current, { focus: event.key, ...event.room })
+  }, [event])
 
   useEffect(() => {
     const section = chapter.current
@@ -176,13 +183,14 @@ function Decision({ event }: { event: Event }) {
     <div className="beat-pin"><div className="shell story-panel">
       <p className="eyebrow">{event.label} · Pompa odası · Örnek veri</p>
       <h2 id={event.decisionId + '-title'}>Şef ajan neye dayanıyor?</h2>
+      <div className="pump-room" ref={roomSlot}>
       <div className="pump-network">
         {event.readings.map((reading) => {
           const pump = pumps.find(({ type }) => type === reading.pump)
           if (!pump) return null
 
           const Icon = icons[pump.type]
-          return <article key={pump.id} className={'network-pump ' + (pump.type === event.key ? 'focus-pump' : '')}>
+          return <article key={pump.id} data-pump={pump.type} className={'network-pump ' + (pump.type === event.key ? 'focus-pump' : '')}>
             <div className="network-pump-title"><Icon size={20} /><h3>{pump.name}</h3></div>
             <strong>{reading.value}</strong>
             <small>{reading.baseline}</small>
@@ -191,6 +199,7 @@ function Decision({ event }: { event: Event }) {
         })}
       </div>
       <div className="network-lines" aria-hidden="true">{event.readings.map(({ pump }) => <span key={pump} />)}</div>
+      </div>
       <article className="conductor">
         <div className="conductor-heading"><GitMerge size={23} /><h3>Şef ajan</h3><span>{event.priority}</span></div>
         <strong>{event.action}</strong>

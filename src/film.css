@@ -522,3 +522,36 @@ html.lenis { scroll-behavior: auto; }
   .incident .illustrated-beat[data-dwell] > .beat-pin,
   .incident .action-right[data-dwell] > .beat-pin { align-items: end; justify-items: center; }
 }
+
+/* 3D pump room on the decision screens. Without .room-live the cards keep their grid. */
+.pump-room { position: relative; }
+.pump-room-canvas { display: none; }
+.pump-room.room-live { height: clamp(300px, 44svh, 480px); margin-bottom: 12px; }
+.room-live .pump-room-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.room-live .network-lines { display: none; }
+.room-live .pump-network { position: absolute; inset: 0; z-index: 1; display: block; pointer-events: none; }
+.room-live .network-pump {
+  position: absolute;
+  left: var(--card-x, 50%);
+  top: var(--anchor-y, 50%);
+  width: min(24%, 225px);
+  padding: 8px 11px;
+  translate: -50% calc(-100% - 18px);
+  box-shadow: 0 8px 22px #16443a2e;
+  pointer-events: auto;
+}
+.room-live .network-pump::after {
+  content: "";
+  position: absolute;
+  left: calc(50% + var(--stem-offset, 0px));
+  top: 100%;
+  width: 7px;
+  height: 18px;
+  translate: -50% 0;
+  background: radial-gradient(circle at 50% calc(100% - 3.5px), #2a6f62 3px, transparent 3.5px), linear-gradient(#5e9f90, #5e9f90) center top / 1.5px calc(100% - 6px) no-repeat;
+}
+.room-live .network-pump > strong { font-size: clamp(1rem, 1.6vw, 1.45rem); }
+.room-live .network-pump:not(.focus-pump) p { display: none; }
+.room-live .network-pump p { font-size: .85rem; line-height: 1.35; }
+.room-live .focus-pump { border-color: var(--scene-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--scene-accent), transparent 70%), 0 8px 22px #16443a2e; }
+.decision-screen:has(.room-live) h2 { margin-bottom: 10px; font-size: clamp(2rem, 3.4vw, 3.3rem); }
